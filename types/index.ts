@@ -18,6 +18,7 @@ export interface Report {
   learnings: string | null;
   next_month: string | null;
   ai_summary: string | null;
+  ai_analysis: string | null;
   status: "draft" | "final";
   created_at: string;
   updated_at: string;

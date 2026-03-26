@@ -39,7 +39,7 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
   const defaultEmail = process.env.NEXT_PUBLIC_SUPERVISOR_EMAIL || "";
 
   // AI分析
-  const [analysis, setAnalysis] = useState<string>("");
+  const [analysis, setAnalysis] = useState<string>(report.ai_analysis || "");
   const [analysisLoading, setAnalysisLoading] = useState(false);
 
   // コメント
@@ -56,16 +56,14 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
       setCurrentUserId(data.user?.id ?? null);
       setCurrentUserEmail(data.user?.email ?? null);
     });
+    setAnalysis(report.ai_analysis || "");
     fetchComments();
-    fetchAnalysis();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report.id]);
 
-  const fetchAnalysis = async () => {
+  const runAnalysis = async () => {
     setAnalysisLoading(true);
-    setAnalysis("");
     try {
-      // 同じメンバーの過去レポートを取得（今月より前）
       const { data: prevReports } = await supabaseClient
         .from("reports")
         .select("month,issues,learnings,achievements,next_month")
@@ -279,11 +277,20 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
               🔍 AI過去比較分析
             </p>
             <button
-              onClick={fetchAnalysis}
+              onClick={runAnalysis}
               disabled={analysisLoading}
-              className="text-xs text-purple-500 hover:underline disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-purple-600 text-white px-3 py-1.5
+                         rounded-lg text-xs font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
             >
-              {analysisLoading ? "分析中..." : "再分析"}
+              {analysisLoading ? (
+                <>
+                  <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  </svg>
+                  分析中...
+                </>
+              ) : analysis ? "再分析" : "🔍 分析を実行"}
             </button>
           </div>
           {analysisLoading ? (
@@ -299,7 +306,7 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
               {analysis}
             </p>
           ) : (
-            <p className="text-sm text-gray-400">分析結果がありません</p>
+            <p className="text-sm text-gray-400">「分析を実行」ボタンを押すと、過去の報告書と比較した分析結果が表示されます。</p>
           )}
         </div>
 
