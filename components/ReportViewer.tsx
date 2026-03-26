@@ -35,16 +35,24 @@ function Section({
 
 export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
   const isFinal = report.status === "final";
+  const defaultEmail = process.env.NEXT_PUBLIC_SUPERVISOR_EMAIL || "";
   const [showNotifyModal, setShowNotifyModal] = useState(false);
-  const [supervisorEmail, setSupervisorEmail] = useState(
-    process.env.NEXT_PUBLIC_SUPERVISOR_EMAIL || ""
+  const [emails, setEmails] = useState<string[]>(
+    defaultEmail ? [defaultEmail] : [""]
   );
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [sendError, setSendError] = useState("");
 
+  const addEmail = () => setEmails((prev) => [...prev, ""]);
+  const removeEmail = (i: number) =>
+    setEmails((prev) => prev.filter((_, idx) => idx !== i));
+  const updateEmail = (i: number, val: string) =>
+    setEmails((prev) => prev.map((e, idx) => (idx === i ? val : e)));
+
   const handleNotify = async () => {
-    if (!supervisorEmail.trim()) return;
+    const validEmails = emails.map((e) => e.trim()).filter(Boolean);
+    if (validEmails.length === 0) return;
     setSending(true);
     setSendError("");
     try {
@@ -52,7 +60,7 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          supervisorEmail: supervisorEmail.trim(),
+          supervisorEmails: validEmails,
           memberName: report.member_name,
           month: report.month,
           project: report.project,
@@ -118,6 +126,7 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
                 onClick={() => {
                   setSent(false);
                   setSendError("");
+                  setEmails(defaultEmail ? [defaultEmail] : [""]);
                   setShowNotifyModal(true);
                 }}
                 className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5
@@ -189,15 +198,37 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
 
             <div>
               <label className="label">送信先メールアドレス</label>
-              <input
-                type="email"
-                value={supervisorEmail}
-                onChange={(e) => setSupervisorEmail(e.target.value)}
-                className="input-field"
-                placeholder="supervisor@example.com"
-                autoFocus
-                onKeyDown={(e) => e.key === "Enter" && handleNotify()}
-              />
+              <div className="space-y-2">
+                {emails.map((email, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => updateEmail(i, e.target.value)}
+                      className="input-field flex-1"
+                      placeholder="supervisor@example.com"
+                      autoFocus={i === 0}
+                      onKeyDown={(e) => e.key === "Enter" && handleNotify()}
+                    />
+                    {emails.length > 1 && (
+                      <button
+                        onClick={() => removeEmail(i)}
+                        className="text-gray-400 hover:text-red-500 text-lg leading-none"
+                        type="button"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={addEmail}
+                  type="button"
+                  className="text-xs text-[#0f6e56] hover:underline mt-1"
+                >
+                  ＋ 宛先を追加
+                </button>
+              </div>
             </div>
 
             {sendError && (

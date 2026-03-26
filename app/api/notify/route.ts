@@ -11,7 +11,7 @@ function formatMonth(month: string): string {
 export async function POST(request: Request) {
   const body = await request.json();
   const {
-    supervisorEmail,
+    supervisorEmails,
     memberName,
     month,
     project,
@@ -24,7 +24,13 @@ export async function POST(request: Request) {
     aiSummary,
   } = body;
 
-  if (!supervisorEmail || !memberName || !month) {
+  const toList: string[] = Array.isArray(supervisorEmails)
+    ? supervisorEmails.filter(Boolean)
+    : supervisorEmails
+    ? [supervisorEmails]
+    : [];
+
+  if (toList.length === 0 || !memberName || !month) {
     return NextResponse.json(
       { error: "必須項目が不足しています" },
       { status: 400 }
@@ -147,7 +153,7 @@ export async function POST(request: Request) {
   try {
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
-      to: supervisorEmail,
+      to: toList,
       subject: `【月次報告】${memberName}さん ${monthLabel}分`,
       html,
     });
