@@ -75,7 +75,13 @@ function HomeContent() {
         // 管理者の場合は全メンバーを取得
         if (profile.permission === "admin") {
           const res = await fetch("/api/members");
-          if (res.ok) setAllMembers(await res.json());
+          if (res.ok) {
+            const members = await res.json();
+            setAllMembers(members);
+            // allMembersと同じオブジェクトで viewingMember を同期
+            const matched = members.find((m: Member) => m.id === profile.id);
+            if (matched) setViewingMember(matched);
+          }
         }
 
         // URLパラメータから報告書を自動表示
@@ -96,9 +102,10 @@ function HomeContent() {
 
   // 管理者がメンバーを切り替えたとき
   const handleChangeMember = async (target: Member) => {
-    setViewingMember(target);
+    setReports([]);  // 先に古いレポートをクリア
     setSelectedReport(null);
     setViewMode("idle");
+    setViewingMember(target);
     await fetchReports(target.id);
   };
 
