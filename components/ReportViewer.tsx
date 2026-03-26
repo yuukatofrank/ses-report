@@ -45,8 +45,9 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
+  const supabaseClient = createSupabaseBrowserClient();
+
   useEffect(() => {
-    const supabaseClient = createSupabaseBrowserClient();
     supabaseClient.auth.getUser().then(({ data }) => {
       setCurrentUserId(data.user?.id ?? null);
       setCurrentUserEmail(data.user?.email ?? null);
@@ -56,28 +57,25 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
   }, [report.id]);
 
   const fetchComments = async () => {
-    const res = await fetch(`/api/comments?report_id=${report.id}`);
-    if (res.ok) {
-      const data = await res.json();
-      setComments(data);
-    }
+    const { data } = await supabaseClient
+      .from("comments")
+      .select("*")
+      .eq("report_id", report.id)
+      .order("created_at", { ascending: true });
+    if (data) setComments(data);
   };
 
   const handleAddComment = async () => {
     if (!newComment.trim() || !currentUserId || !currentUserEmail) return;
     setCommentLoading(true);
     try {
-      const res = await fetch("/api/comments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          report_id: report.id,
-          user_id: currentUserId,
-          user_email: currentUserEmail,
-          content: newComment.trim(),
-        }),
+      const { error } = await supabaseClient.from("comments").insert({
+        report_id: report.id,
+        user_id: currentUserId,
+        user_email: currentUserEmail,
+        content: newComment.trim(),
       });
-      if (res.ok) {
+      if (!error) {
         setNewComment("");
         await fetchComments();
       }
@@ -87,7 +85,7 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
   };
 
   const handleDeleteComment = async (id: string) => {
-    await fetch(`/api/comments/${id}`, { method: "DELETE" });
+    await supabaseClient.from("comments").delete().eq("id", id);
     await fetchComments();
   };
   const [showNotifyModal, setShowNotifyModal] = useState(false);
