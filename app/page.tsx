@@ -29,6 +29,7 @@ function HomeContent() {
   const [profileName, setProfileName] = useState("");
   const [profileRole, setProfileRole] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   // 認証チェック
   useEffect(() => {
@@ -37,6 +38,7 @@ function HomeContent() {
         router.push("/auth");
       } else {
         setUserId(data.user.id);
+        setUserEmail(data.user.email ?? null);
       }
     });
   }, [router, supabase]);
@@ -92,6 +94,7 @@ function HomeContent() {
           user_id: userId,
           name: profileName.trim(),
           role: profileRole.trim(),
+          email: userEmail,
         }),
       });
       if (res.ok) {

@@ -2,6 +2,7 @@ export interface Member {
   id: string;
   name: string;
   role: string | null;
+  email: string | null;
   created_at: string;
 }
 

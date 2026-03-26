@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { user_id, name, role } = body;
+  const { user_id, name, role, email } = body;
 
   if (!user_id || !name?.trim()) {
     return NextResponse.json({ error: "user_id と name は必須です" }, { status: 400 });
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabase
     .from("members")
-    .insert({ user_id, name: name.trim(), role: role?.trim() || null })
+    .insert({ user_id, name: name.trim(), role: role?.trim() || null, email: email || null })
     .select()
     .single();
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   const body = await request.json();
-  const { user_id, name, role } = body;
+  const { user_id, name, role, email } = body;
 
   if (!user_id || !name?.trim()) {
     return NextResponse.json({ error: "user_id と name は必須です" }, { status: 400 });
@@ -55,7 +55,7 @@ export async function PUT(request: Request) {
 
   const { data, error } = await supabase
     .from("members")
-    .update({ name: name.trim(), role: role?.trim() || null })
+    .update({ name: name.trim(), role: role?.trim() || null, email: email || null })
     .eq("user_id", user_id)
     .select()
     .single();

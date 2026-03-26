@@ -111,6 +111,16 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
       if (!error) {
         setNewComment("");
         await fetchComments();
+        // 報告書作成者へメール通知
+        fetch("/api/notify-comment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            reportId: report.id,
+            commenterEmail: currentUserEmail,
+            commentContent: newComment.trim(),
+          }),
+        });
       }
     } finally {
       setCommentLoading(false);
