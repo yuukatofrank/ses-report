@@ -65,7 +65,7 @@ ${previousSummary}
 （前月からの改善や成長を認める）`;
 
     const message = await client.messages.create({
-      model: "claude-opus-4-5",
+      model: "claude-sonnet-4-5",
       max_tokens: 800,
       messages: [{ role: "user", content: prompt }],
     });
