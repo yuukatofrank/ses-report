@@ -245,7 +245,7 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
               </button>
               <button
                 onClick={handleNotify}
-                disabled={!supervisorEmail.trim() || sending}
+                disabled={emails.every((e) => !e.trim()) || sending}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg text-sm
                            font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
