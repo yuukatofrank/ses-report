@@ -38,6 +38,10 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
   const isFinal = report.status === "final";
   const defaultEmail = process.env.NEXT_PUBLIC_SUPERVISOR_EMAIL || "";
 
+  // AI分析
+  const [analysis, setAnalysis] = useState<string>("");
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+
   // コメント
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -53,8 +57,39 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
       setCurrentUserEmail(data.user?.email ?? null);
     });
     fetchComments();
+    fetchAnalysis();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report.id]);
+
+  const fetchAnalysis = async () => {
+    setAnalysisLoading(true);
+    setAnalysis("");
+    try {
+      // 同じメンバーの過去レポートを取得（今月より前）
+      const { data: prevReports } = await supabaseClient
+        .from("reports")
+        .select("month,issues,learnings,achievements,next_month")
+        .eq("member_id", report.member_id)
+        .lt("month", report.month)
+        .order("month", { ascending: false })
+        .limit(6);
+
+      const res = await fetch("/api/ai-analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentReport: report,
+          previousReports: prevReports || [],
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAnalysis(data.analysis);
+      }
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
 
   const fetchComments = async () => {
     const { data } = await supabaseClient
@@ -236,6 +271,37 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
         <p className="text-xs text-gray-400 text-right mt-3">
           更新: {new Date(report.updated_at).toLocaleDateString("ja-JP")}
         </p>
+
+        {/* AI 過去比較分析 */}
+        <div className="mt-5 card p-5 border-l-4 border-l-purple-400">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
+              🔍 AI過去比較分析
+            </p>
+            <button
+              onClick={fetchAnalysis}
+              disabled={analysisLoading}
+              className="text-xs text-purple-500 hover:underline disabled:opacity-50"
+            >
+              {analysisLoading ? "分析中..." : "再分析"}
+            </button>
+          </div>
+          {analysisLoading ? (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <svg className="animate-spin h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+              過去の報告書と比較分析中...
+            </div>
+          ) : analysis ? (
+            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+              {analysis}
+            </p>
+          ) : (
+            <p className="text-sm text-gray-400">分析結果がありません</p>
+          )}
+        </div>
 
         {/* コメントセクション */}
         <div className="mt-6">
