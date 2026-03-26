@@ -3,6 +3,7 @@ export interface Member {
   name: string;
   role: string | null;
   email: string | null;
+  permission: "admin" | "member";
   created_at: string;
 }
 

@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [updatingPermission, setUpdatingPermission] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
 
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
@@ -49,6 +50,27 @@ export default function AdminPage() {
       }
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleTogglePermission = async (member: Member) => {
+    const newPermission = member.permission === "admin" ? "member" : "admin";
+    const label = newPermission === "admin" ? "管理者" : "一般ユーザー";
+    if (!confirm(`「${member.name}」の権限を「${label}」に変更しますか？`)) return;
+    setUpdatingPermission(member.id);
+    try {
+      const res = await fetch(`/api/members/${member.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permission: newPermission }),
+      });
+      if (res.ok) {
+        await fetchMembers();
+      } else {
+        alert("権限変更に失敗しました");
+      }
+    } finally {
+      setUpdatingPermission(null);
     }
   };
 
@@ -103,13 +125,21 @@ export default function AdminPage() {
               {members.map((m) => (
                 <li key={m.id} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-gray-800">{m.name}</span>
                       {m.role && (
                         <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
                           {m.role}
                         </span>
                       )}
+                      {/* 権限バッジ */}
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        m.permission === "admin"
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-gray-100 text-gray-500"
+                      }`}>
+                        {m.permission === "admin" ? "管理者" : "一般"}
+                      </span>
                     </div>
                     <div className="text-xs text-gray-400 mt-0.5">
                       {m.email || "メールアドレス未登録"}
@@ -118,14 +148,31 @@ export default function AdminPage() {
                       登録日: {new Date(m.created_at).toLocaleDateString("ja-JP")}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleDelete(m)}
-                    disabled={deleting === m.id}
-                    className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400
-                               px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    {deleting === m.id ? "削除中..." : "削除"}
-                  </button>
+                  <div className="flex items-center gap-2 ml-4">
+                    {/* 権限変更ボタン */}
+                    <button
+                      onClick={() => handleTogglePermission(m)}
+                      disabled={updatingPermission === m.id}
+                      className={`text-xs border px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                        m.permission === "admin"
+                          ? "text-purple-500 hover:text-purple-700 border-purple-200 hover:border-purple-400"
+                          : "text-gray-400 hover:text-purple-600 border-gray-200 hover:border-purple-300"
+                      }`}
+                    >
+                      {updatingPermission === m.id
+                        ? "変更中..."
+                        : m.permission === "admin" ? "一般に変更" : "管理者に変更"}
+                    </button>
+                    {/* 削除ボタン */}
+                    <button
+                      onClick={() => handleDelete(m)}
+                      disabled={deleting === m.id}
+                      className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400
+                                 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {deleting === m.id ? "削除中..." : "削除"}
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
