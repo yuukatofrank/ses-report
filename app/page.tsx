@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import ReportForm from "@/components/ReportForm";
@@ -10,69 +12,91 @@ import { Member, Report } from "@/types";
 type ViewMode = "idle" | "form-new" | "form-edit" | "view";
 
 export default function Home() {
-  const [members, setMembers] = useState<Member[]>([]);
+  const router = useRouter();
+  const supabase = createSupabaseBrowserClient();
+
+  const [userId, setUserId] = useState<string | null>(null);
+  const [member, setMember] = useState<Member | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newRole, setNewRole] = useState("");
-  const [adding, setAdding] = useState(false);
 
-  const fetchMembers = useCallback(async () => {
-    const res = await fetch("/api/members");
-    if (res.ok) setMembers(await res.json());
+  // プロフィールモーダル
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileRole, setProfileRole] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+
+  // 認証チェック
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) {
+        router.push("/auth");
+      } else {
+        setUserId(data.user.id);
+      }
+    });
+  }, [router, supabase]);
+
+  const fetchProfile = useCallback(async (uid: string) => {
+    const res = await fetch(`/api/profile?user_id=${uid}`);
+    if (res.ok) {
+      const data = await res.json();
+      return data as Member | null;
+    }
+    return null;
   }, []);
 
-  const fetchReports = useCallback(async () => {
-    const res = await fetch("/api/reports");
+  const fetchReports = useCallback(async (memberId: string) => {
+    const res = await fetch(`/api/reports?member_id=${memberId}`);
     if (res.ok) setReports(await res.json());
   }, []);
 
   useEffect(() => {
-    Promise.all([fetchMembers(), fetchReports()]).finally(() =>
-      setLoading(false)
-    );
-  }, [fetchMembers, fetchReports]);
+    if (!userId) return;
+    const init = async () => {
+      const profile = await fetchProfile(userId);
+      setMember(profile);
+      if (!profile) {
+        setShowProfileModal(true);
+      } else {
+        await fetchReports(profile.id);
+      }
+      setLoading(false);
+    };
+    init();
+  }, [userId, fetchProfile, fetchReports]);
 
-  const handleAddMember = async () => {
-    if (!newName.trim()) return;
-    setAdding(true);
+  const handleSaveProfile = async () => {
+    if (!profileName.trim() || !userId) return;
+    setProfileSaving(true);
     try {
-      const res = await fetch("/api/members", {
-        method: "POST",
+      const method = member ? "PUT" : "POST";
+      const res = await fetch("/api/profile", {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName.trim(), role: newRole.trim() }),
+        body: JSON.stringify({
+          user_id: userId,
+          name: profileName.trim(),
+          role: profileRole.trim(),
+        }),
       });
       if (res.ok) {
-        const newMember = await res.json();
-        await fetchMembers();
-        setSelectedMember(newMember);
-        setNewName("");
-        setNewRole("");
-        setShowAddModal(false);
-      } else {
-        const err = await res.json();
-        alert(err.error || "メンバー追加に失敗しました");
+        const updated = await res.json();
+        setMember(updated);
+        setShowProfileModal(false);
+        await fetchReports(updated.id);
       }
     } finally {
-      setAdding(false);
+      setProfileSaving(false);
     }
   };
 
-  const handleDeleteMember = async (id: string) => {
-    const res = await fetch(`/api/members/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      await fetchMembers();
-      await fetchReports();
-      setSelectedMember(null);
-      setSelectedReport(null);
-      setViewMode("idle");
-    } else {
-      alert("削除に失敗しました");
-    }
+  const openEditProfile = () => {
+    setProfileName(member?.name || "");
+    setProfileRole(member?.role || "");
+    setShowProfileModal(true);
   };
 
   const handleSelectReport = (report: Report) => {
@@ -85,10 +109,7 @@ export default function Home() {
     setViewMode("form-new");
   };
 
-  const handleSaveReport = async (
-    data: Partial<Report>,
-    status: "draft" | "final"
-  ) => {
+  const handleSaveReport = async (data: Partial<Report>, status: "draft" | "final") => {
     if (viewMode === "form-new") {
       const res = await fetch("/api/reports", {
         method: "POST",
@@ -97,7 +118,7 @@ export default function Home() {
       });
       if (res.ok) {
         const saved = await res.json();
-        await fetchReports();
+        if (member) await fetchReports(member.id);
         setSelectedReport(saved);
         setViewMode("view");
       } else {
@@ -112,7 +133,7 @@ export default function Home() {
       });
       if (res.ok) {
         const saved = await res.json();
-        await fetchReports();
+        if (member) await fetchReports(member.id);
         setSelectedReport(saved);
         setViewMode("view");
       } else {
@@ -123,11 +144,9 @@ export default function Home() {
 
   const handleDeleteReport = async () => {
     if (!selectedReport) return;
-    const res = await fetch(`/api/reports/${selectedReport.id}`, {
-      method: "DELETE",
-    });
+    const res = await fetch(`/api/reports/${selectedReport.id}`, { method: "DELETE" });
     if (res.ok) {
-      await fetchReports();
+      if (member) await fetchReports(member.id);
       setSelectedReport(null);
       setViewMode("idle");
     } else {
@@ -145,22 +164,14 @@ export default function Home() {
 
   return (
     <>
-      <Header onAddMember={() => setShowAddModal(true)} />
+      <Header member={member} onEditProfile={openEditProfile} />
 
       <Sidebar
-        members={members}
+        member={member}
         reports={reports}
-        selectedMember={selectedMember}
         selectedReport={selectedReport}
-        onSelectMember={(m) => {
-          setSelectedMember(m);
-          setSelectedReport(null);
-          setViewMode("idle");
-        }}
         onSelectReport={handleSelectReport}
         onNewReport={handleNewReport}
-        onDeleteMember={handleDeleteMember}
-        onAddMember={() => setShowAddModal(true)}
       />
 
       {/* メインエリア */}
@@ -172,27 +183,22 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] text-gray-400">
             <div className="text-5xl mb-4">📋</div>
             <p className="text-lg font-medium">
-              {selectedMember
+              {member
                 ? "月報を選択するか、新規作成してください"
-                : "左のメンバー一覧からメンバーを選択してください"}
+                : "プロフィールを設定してください"}
             </p>
           </div>
         )}
 
-        {(viewMode === "form-new" || viewMode === "form-edit") &&
-          selectedMember && (
-            <ReportForm
-              member={selectedMember}
-              report={
-                viewMode === "form-edit" ? selectedReport ?? undefined : undefined
-              }
-              onSave={handleSaveReport}
-              onDelete={
-                viewMode === "form-edit" ? handleDeleteReport : undefined
-              }
-              onCancel={() => setViewMode(selectedReport ? "view" : "idle")}
-            />
-          )}
+        {(viewMode === "form-new" || viewMode === "form-edit") && member && (
+          <ReportForm
+            member={member}
+            report={viewMode === "form-edit" ? selectedReport ?? undefined : undefined}
+            onSave={handleSaveReport}
+            onDelete={viewMode === "form-edit" ? handleDeleteReport : undefined}
+            onCancel={() => setViewMode(selectedReport ? "view" : "idle")}
+          />
+        )}
 
         {viewMode === "view" && selectedReport && (
           <ReportViewer
@@ -202,55 +208,56 @@ export default function Home() {
         )}
       </main>
 
-      {/* メンバー追加モーダル */}
-      {showAddModal && (
+      {/* プロフィール設定・編集モーダル */}
+      {showProfileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h2 className="text-base font-bold text-gray-800 mb-4">
-              メンバー追加
+            <h2 className="text-base font-bold text-gray-800 mb-1">
+              {member ? "プロフィール編集" : "プロフィール設定"}
             </h2>
+            <p className="text-xs text-gray-500 mb-4">
+              {member ? "名前・役職を変更できます" : "月報を作成する前に名前を登録してください"}
+            </p>
             <div className="space-y-3">
               <div>
                 <label className="label">氏名 *</label>
                 <input
                   type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
                   className="input-field"
                   placeholder="山田 太郎"
                   autoFocus
-                  onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
                 />
               </div>
               <div>
                 <label className="label">役職・ポジション</label>
                 <input
                   type="text"
-                  value={newRole}
-                  onChange={(e) => setNewRole(e.target.value)}
+                  value={profileRole}
+                  onChange={(e) => setProfileRole(e.target.value)}
                   className="input-field"
                   placeholder="フロントエンドエンジニア"
-                  onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
                 />
               </div>
             </div>
             <div className="flex gap-2 mt-5">
+              {member && (
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className="btn-secondary flex-1"
+                >
+                  キャンセル
+                </button>
+              )}
               <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setNewName("");
-                  setNewRole("");
-                }}
-                className="btn-secondary flex-1"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleAddMember}
-                disabled={!newName.trim() || adding}
+                onClick={handleSaveProfile}
+                disabled={!profileName.trim() || profileSaving}
                 className="btn-primary flex-1"
               >
-                {adding ? "追加中..." : "追加"}
+                {profileSaving ? "保存中..." : "保存"}
               </button>
             </div>
           </div>

@@ -2,12 +2,14 @@
 
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { Member } from "@/types";
 
 interface HeaderProps {
-  onAddMember: () => void;
+  member: Member | null;
+  onEditProfile: () => void;
 }
 
-export default function Header({ onAddMember }: HeaderProps) {
+export default function Header({ member, onEditProfile }: HeaderProps) {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
 
@@ -27,12 +29,18 @@ export default function Header({ onAddMember }: HeaderProps) {
       </h1>
 
       <div className="flex items-center gap-3">
+        {member && (
+          <span className="text-white/70 text-sm">
+            {member.name}{member.role ? ` · ${member.role}` : ""}
+          </span>
+        )}
+
         <button
-          onClick={onAddMember}
+          onClick={onEditProfile}
           className="bg-[#0f6e56] text-white px-3 py-1.5 rounded-lg text-sm
                      font-medium hover:bg-[#138a6b] transition-colors"
         >
-          ＋ メンバー追加
+          {member ? "プロフィール編集" : "プロフィール設定"}
         </button>
 
         <button
