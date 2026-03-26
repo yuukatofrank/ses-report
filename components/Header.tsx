@@ -53,7 +53,7 @@ export default function Header({
         style={{ backgroundColor: "#1a1a2e", height: "56px" }}
       >
         <h1 className="text-white font-bold text-lg tracking-wide">
-          SES月次報告システム
+          frankSQUARE月次報告
         </h1>
 
         <div className="flex items-center gap-3">
