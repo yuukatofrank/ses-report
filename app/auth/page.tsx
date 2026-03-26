@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Mode = "login" | "signup";
 
@@ -127,18 +128,23 @@ export default function AuthPage() {
             </button>
           </form>
 
-          <div className="mt-4 text-center">
+          <div className="mt-4 text-center space-y-2">
             <button
               onClick={() => {
                 setMode(mode === "login" ? "signup" : "login");
                 setMessage(null);
               }}
-              className="text-sm text-[#0f6e56] hover:underline"
+              className="block w-full text-sm text-[#0f6e56] hover:underline"
             >
               {mode === "login"
                 ? "アカウントをお持ちでない方はこちら"
                 : "すでにアカウントをお持ちの方はこちら"}
             </button>
+            {mode === "login" && (
+              <Link href="/auth/forgot-password" className="block text-sm text-gray-400 hover:underline">
+                パスワードをお忘れですか？
+              </Link>
+            )}
           </div>
         </div>
       </div>
