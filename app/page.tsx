@@ -16,80 +16,75 @@ export default function Home() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
   const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newRole, setNewRole] = useState("");
+  const [adding, setAdding] = useState(false);
 
-  // メンバー一覧取得
   const fetchMembers = useCallback(async () => {
     const res = await fetch("/api/members");
-    if (res.ok) {
-      const data = await res.json();
-      setMembers(data);
-    }
+    if (res.ok) setMembers(await res.json());
   }, []);
 
-  // 報告書一覧取得
   const fetchReports = useCallback(async () => {
-    const url = selectedMember
-      ? `/api/reports?member_id=${selectedMember.id}`
-      : "/api/reports";
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      setReports(data);
-    }
-  }, [selectedMember]);
+    const res = await fetch("/api/reports");
+    if (res.ok) setReports(await res.json());
+  }, []);
 
   useEffect(() => {
-    fetchMembers().finally(() => setLoading(false));
-  }, [fetchMembers]);
+    Promise.all([fetchMembers(), fetchReports()]).finally(() =>
+      setLoading(false)
+    );
+  }, [fetchMembers, fetchReports]);
 
-  useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
-
-  // メンバー追加
-  const handleAddMember = async (name: string, role: string) => {
-    const res = await fetch("/api/members", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, role }),
-    });
-    if (res.ok) {
-      const newMember = await res.json();
-      await fetchMembers();
-      setSelectedMember(newMember);
-    } else {
-      const err = await res.json();
-      alert(err.error || "メンバー追加に失敗しました");
+  const handleAddMember = async () => {
+    if (!newName.trim()) return;
+    setAdding(true);
+    try {
+      const res = await fetch("/api/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName.trim(), role: newRole.trim() }),
+      });
+      if (res.ok) {
+        const newMember = await res.json();
+        await fetchMembers();
+        setSelectedMember(newMember);
+        setNewName("");
+        setNewRole("");
+        setShowAddModal(false);
+      } else {
+        const err = await res.json();
+        alert(err.error || "メンバー追加に失敗しました");
+      }
+    } finally {
+      setAdding(false);
     }
   };
 
-  // メンバー削除
   const handleDeleteMember = async (id: string) => {
     const res = await fetch(`/api/members/${id}`, { method: "DELETE" });
     if (res.ok) {
       await fetchMembers();
+      await fetchReports();
       setSelectedMember(null);
       setSelectedReport(null);
       setViewMode("idle");
-      await fetchReports();
     } else {
       alert("削除に失敗しました");
     }
   };
 
-  // 報告書選択
   const handleSelectReport = (report: Report) => {
     setSelectedReport(report);
     setViewMode("view");
   };
 
-  // 新規報告書
   const handleNewReport = () => {
     setSelectedReport(null);
     setViewMode("form-new");
   };
 
-  // 報告書保存（新規 or 更新）
   const handleSaveReport = async (
     data: Partial<Report>,
     status: "draft" | "final"
@@ -126,7 +121,6 @@ export default function Home() {
     }
   };
 
-  // 報告書削除
   const handleDeleteReport = async () => {
     if (!selectedReport) return;
     const res = await fetch(`/api/reports/${selectedReport.id}`, {
@@ -151,24 +145,22 @@ export default function Home() {
 
   return (
     <>
-      <Header
+      <Header onAddMember={() => setShowAddModal(true)} />
+
+      <Sidebar
         members={members}
+        reports={reports}
         selectedMember={selectedMember}
+        selectedReport={selectedReport}
         onSelectMember={(m) => {
           setSelectedMember(m);
           setSelectedReport(null);
           setViewMode("idle");
         }}
-        onAddMember={handleAddMember}
-        onDeleteMember={handleDeleteMember}
-      />
-
-      <Sidebar
-        reports={reports}
-        selectedReport={selectedReport}
-        selectedMember={selectedMember}
         onSelectReport={handleSelectReport}
         onNewReport={handleNewReport}
+        onDeleteMember={handleDeleteMember}
+        onAddMember={() => setShowAddModal(true)}
       />
 
       {/* メインエリア */}
@@ -181,8 +173,8 @@ export default function Home() {
             <div className="text-5xl mb-4">📋</div>
             <p className="text-lg font-medium">
               {selectedMember
-                ? "報告書を選択するか、新規作成してください"
-                : "左上のメニューからメンバーを選択してください"}
+                ? "月報を選択するか、新規作成してください"
+                : "左のメンバー一覧からメンバーを選択してください"}
             </p>
           </div>
         )}
@@ -191,14 +183,14 @@ export default function Home() {
           selectedMember && (
             <ReportForm
               member={selectedMember}
-              report={viewMode === "form-edit" ? selectedReport ?? undefined : undefined}
+              report={
+                viewMode === "form-edit" ? selectedReport ?? undefined : undefined
+              }
               onSave={handleSaveReport}
               onDelete={
                 viewMode === "form-edit" ? handleDeleteReport : undefined
               }
-              onCancel={() =>
-                setViewMode(selectedReport ? "view" : "idle")
-              }
+              onCancel={() => setViewMode(selectedReport ? "view" : "idle")}
             />
           )}
 
@@ -209,6 +201,61 @@ export default function Home() {
           />
         )}
       </main>
+
+      {/* メンバー追加モーダル */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h2 className="text-base font-bold text-gray-800 mb-4">
+              メンバー追加
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <label className="label">氏名 *</label>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="input-field"
+                  placeholder="山田 太郎"
+                  autoFocus
+                  onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
+                />
+              </div>
+              <div>
+                <label className="label">役職・ポジション</label>
+                <input
+                  type="text"
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                  className="input-field"
+                  placeholder="フロントエンドエンジニア"
+                  onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={() => {
+                  setShowAddModal(false);
+                  setNewName("");
+                  setNewRole("");
+                }}
+                className="btn-secondary flex-1"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleAddMember}
+                disabled={!newName.trim() || adding}
+                className="btn-primary flex-1"
+              >
+                {adding ? "追加中..." : "追加"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
