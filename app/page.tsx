@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -11,8 +11,9 @@ import { Member, Report } from "@/types";
 
 type ViewMode = "idle" | "form-new" | "form-edit" | "view";
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createSupabaseBrowserClient();
 
   const [userId, setUserId] = useState<string | null>(null);
@@ -62,6 +63,16 @@ export default function Home() {
         setShowProfileModal(true);
       } else {
         await fetchReports(profile.id);
+        // URLパラメータから報告書を自動表示
+        const reportId = searchParams.get("report_id");
+        if (reportId) {
+          const res = await fetch(`/api/reports/${reportId}`);
+          if (res.ok) {
+            const report = await res.json();
+            setSelectedReport(report);
+            setViewMode("view");
+          }
+        }
       }
       setLoading(false);
     };
@@ -264,5 +275,17 @@ export default function Home() {
         </div>
       )}
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-500">読み込み中...</div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

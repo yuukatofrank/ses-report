@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     learnings,
     nextMonth,
     aiSummary,
+    reportUrl,
   } = body;
 
   const toList: string[] = Array.isArray(supervisorEmails)
@@ -70,6 +71,12 @@ export async function POST(request: Request) {
       <h2>${memberName}さんから月報が届きました</h2>
       <span class="badge">📋 ${monthLabel} 報告</span>
     </div>
+    ${reportUrl ? `
+    <div style="background:#0f6e56; padding: 12px 32px;">
+      <a href="${reportUrl}" style="display:inline-block; background:#fff; color:#0f6e56; font-size:13px; font-weight:bold; padding:8px 20px; border-radius:6px; text-decoration:none;">
+        📄 報告書を開く
+      </a>
+    </div>` : ""}
     <div class="body">
       <div class="meta">
         <span>👤 氏名：${memberName}</span>

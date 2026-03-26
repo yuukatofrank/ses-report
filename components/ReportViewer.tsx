@@ -125,6 +125,7 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
           learnings: report.learnings,
           nextMonth: report.next_month,
           aiSummary: report.ai_summary,
+          reportUrl: `${window.location.origin}?report_id=${report.id}`,
         }),
       });
       if (res.ok) {
