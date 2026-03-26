@@ -30,13 +30,19 @@ export default function AuthPage() {
         router.refresh();
       }
     } else {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
-        if (error.message.includes("already registered")) {
+        if (
+          error.message.includes("already registered") ||
+          error.message.includes("already been registered")
+        ) {
           setMessage({ type: "error", text: "このメールアドレスはすでに登録されています" });
         } else {
           setMessage({ type: "error", text: error.message });
         }
+      } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+        // メール確認が有効な場合、登録済みメールでもエラーにならないためidentitiesで判定
+        setMessage({ type: "error", text: "このメールアドレスはすでに登録されています" });
       } else {
         setMessage({
           type: "success",
