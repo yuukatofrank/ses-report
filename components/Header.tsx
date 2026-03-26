@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Member } from "@/types";
@@ -13,6 +14,16 @@ interface HeaderProps {
 export default function Header({ member, onEditProfile, onToggleSidebar }: HeaderProps) {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (adminEmail && data.user?.email === adminEmail) {
+        setIsAdmin(true);
+      }
+    });
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -46,6 +57,16 @@ export default function Header({ member, onEditProfile, onToggleSidebar }: Heade
           <span className="hidden md:block text-white/70 text-sm truncate max-w-[160px]">
             {member.name}{member.role ? ` · ${member.role}` : ""}
           </span>
+        )}
+
+        {isAdmin && (
+          <button
+            onClick={() => router.push("/admin")}
+            className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
+                       font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
+          >
+            管理
+          </button>
         )}
 
         <button
