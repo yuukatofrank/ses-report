@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Member } from "@/types";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   members: Member[];
@@ -22,6 +24,14 @@ export default function Header({
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
   const [adding, setAdding] = useState(false);
+  const router = useRouter();
+  const supabase = createSupabaseBrowserClient();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/auth");
+    router.refresh();
+  };
 
   const handleAdd = async () => {
     if (!newName.trim()) return;
@@ -96,6 +106,15 @@ export default function Header({
               削除
             </button>
           )}
+
+          {/* ログアウトボタン */}
+          <button
+            onClick={handleLogout}
+            className="text-white/70 hover:text-white px-3 py-1.5 rounded-lg text-sm
+                       font-medium hover:bg-white/10 transition-colors border border-white/20"
+          >
+            ログアウト
+          </button>
         </div>
       </header>
 
