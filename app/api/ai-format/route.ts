@@ -23,14 +23,13 @@ export async function POST(request: Request) {
 【学んだこと】${learnings || "（未記入）"}
 【来月の目標】${nextMonth || "（未記入）"}`;
 
-  const stream = await client.messages.stream({
-    model: "claude-opus-4-6",
+  const message = await client.messages.create({
+    model: "claude-opus-4-5",
     max_tokens: 1024,
     messages: [{ role: "user", content: prompt }],
   });
 
-  const finalMessage = await stream.finalMessage();
-  const textBlock = finalMessage.content.find((b) => b.type === "text");
+  const textBlock = message.content.find((b) => b.type === "text");
   const summary = textBlock && textBlock.type === "text" ? textBlock.text : "";
 
   return NextResponse.json({ summary });
