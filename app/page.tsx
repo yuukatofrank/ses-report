@@ -22,6 +22,7 @@ function HomeContent() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // プロフィールモーダル
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -175,7 +176,11 @@ function HomeContent() {
 
   return (
     <>
-      <Header member={member} onEditProfile={openEditProfile} />
+      <Header
+        member={member}
+        onEditProfile={openEditProfile}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+      />
 
       <Sidebar
         member={member}
@@ -183,21 +188,36 @@ function HomeContent() {
         selectedReport={selectedReport}
         onSelectReport={handleSelectReport}
         onNewReport={handleNewReport}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
       {/* メインエリア */}
-      <main
-        className="min-h-screen overflow-y-auto"
-        style={{ paddingTop: "56px", marginLeft: "260px" }}
-      >
+      <main className="min-h-screen overflow-y-auto pt-[56px] md:ml-[260px]">
         {viewMode === "idle" && (
-          <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] text-gray-400">
+          <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] text-gray-400 px-4 text-center">
             <div className="text-5xl mb-4">📋</div>
-            <p className="text-lg font-medium">
+            <p className="text-base md:text-lg font-medium">
               {member
                 ? "月報を選択するか、新規作成してください"
                 : "プロフィールを設定してください"}
             </p>
+            {member && (
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="md:hidden btn-secondary text-sm"
+                >
+                  📋 月報一覧
+                </button>
+                <button
+                  onClick={handleNewReport}
+                  className="btn-primary text-sm"
+                >
+                  ＋ 新規作成
+                </button>
+              </div>
+            )}
           </div>
         )}
 
