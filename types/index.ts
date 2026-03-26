@@ -24,3 +24,12 @@ export interface Report {
 }
 
 export type ReportInput = Omit<Report, "id" | "created_at" | "updated_at">;
+
+export interface Comment {
+  id: string;
+  report_id: string;
+  user_id: string;
+  user_email: string;
+  content: string;
+  created_at: string;
+}

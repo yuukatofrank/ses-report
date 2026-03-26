@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Report } from "@/types";
+import { useState, useEffect } from "react";
+import { Report, Comment } from "@/types";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 interface ReportViewerProps {
   report: Report;
@@ -36,6 +37,59 @@ function Section({
 export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
   const isFinal = report.status === "final";
   const defaultEmail = process.env.NEXT_PUBLIC_SUPERVISOR_EMAIL || "";
+
+  // コメント
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabaseClient = createSupabaseBrowserClient();
+    supabaseClient.auth.getUser().then(({ data }) => {
+      setCurrentUserId(data.user?.id ?? null);
+      setCurrentUserEmail(data.user?.email ?? null);
+    });
+    fetchComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report.id]);
+
+  const fetchComments = async () => {
+    const res = await fetch(`/api/comments?report_id=${report.id}`);
+    if (res.ok) {
+      const data = await res.json();
+      setComments(data);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !currentUserId || !currentUserEmail) return;
+    setCommentLoading(true);
+    try {
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          report_id: report.id,
+          user_id: currentUserId,
+          user_email: currentUserEmail,
+          content: newComment.trim(),
+        }),
+      });
+      if (res.ok) {
+        setNewComment("");
+        await fetchComments();
+      }
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  const handleDeleteComment = async (id: string) => {
+    await fetch(`/api/comments/${id}`, { method: "DELETE" });
+    await fetchComments();
+  };
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [emails, setEmails] = useState<string[]>(
     defaultEmail ? [defaultEmail] : [""]
@@ -183,6 +237,68 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
         <p className="text-xs text-gray-400 text-right mt-3">
           更新: {new Date(report.updated_at).toLocaleDateString("ja-JP")}
         </p>
+
+        {/* コメントセクション */}
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">💬 コメント</h3>
+
+          {/* コメント一覧 */}
+          {comments.length === 0 ? (
+            <p className="text-xs text-gray-400 mb-4">まだコメントはありません</p>
+          ) : (
+            <div className="space-y-3 mb-4">
+              {comments.map((c) => (
+                <div key={c.id} className="bg-gray-50 rounded-lg px-4 py-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-gray-600">{c.user_email}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">
+                        {new Date(c.created_at).toLocaleDateString("ja-JP", {
+                          month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit",
+                        })}
+                      </span>
+                      {currentUserId === c.user_id && (
+                        <button
+                          onClick={() => handleDeleteComment(c.id)}
+                          className="text-xs text-gray-300 hover:text-red-400 transition-colors"
+                        >
+                          削除
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{c.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* コメント入力 */}
+          {currentUserId ? (
+            <div className="flex gap-2">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                className="input-field flex-1 resize-none"
+                rows={2}
+                placeholder="コメントを入力..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAddComment();
+                }}
+              />
+              <button
+                onClick={handleAddComment}
+                disabled={!newComment.trim() || commentLoading}
+                className="bg-[#0f6e56] text-white px-4 py-2 rounded-lg text-sm font-medium
+                           hover:bg-[#0d5f49] transition-colors disabled:opacity-50 self-end"
+              >
+                {commentLoading ? "送信中..." : "送信"}
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">コメントするにはログインが必要です</p>
+          )}
+        </div>
       </div>
 
       {/* 報告モーダル */}
