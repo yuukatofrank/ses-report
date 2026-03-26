@@ -24,6 +24,10 @@ function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // 管理者用
+  const [allMembers, setAllMembers] = useState<Member[]>([]);
+  const [viewingMember, setViewingMember] = useState<Member | null>(null);
+
   // プロフィールモーダル
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileName, setProfileName] = useState("");
@@ -65,7 +69,15 @@ function HomeContent() {
       if (!profile) {
         setShowProfileModal(true);
       } else {
+        setViewingMember(profile);
         await fetchReports(profile.id);
+
+        // 管理者の場合は全メンバーを取得
+        if (profile.permission === "admin") {
+          const res = await fetch("/api/members");
+          if (res.ok) setAllMembers(await res.json());
+        }
+
         // URLパラメータから報告書を自動表示
         const reportId = searchParams.get("report_id");
         if (reportId) {
@@ -81,6 +93,14 @@ function HomeContent() {
     };
     init();
   }, [userId, fetchProfile, fetchReports]);
+
+  // 管理者がメンバーを切り替えたとき
+  const handleChangeMember = async (target: Member) => {
+    setViewingMember(target);
+    setSelectedReport(null);
+    setViewMode("idle");
+    await fetchReports(target.id);
+  };
 
   const handleSaveProfile = async () => {
     if (!profileName.trim() || !userId) return;
@@ -100,6 +120,7 @@ function HomeContent() {
       if (res.ok) {
         const updated = await res.json();
         setMember(updated);
+        setViewingMember(updated);
         setShowProfileModal(false);
         await fetchReports(updated.id);
       }
@@ -123,6 +144,8 @@ function HomeContent() {
     setSelectedReport(null);
     setViewMode("form-new");
   };
+
+  const isViewingOwn = !viewingMember || viewingMember.id === member?.id;
 
   const handleSaveReport = async (data: Partial<Report>, status: "draft" | "final") => {
     if (viewMode === "form-new") {
@@ -193,6 +216,9 @@ function HomeContent() {
         onNewReport={handleNewReport}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        allMembers={member?.permission === "admin" ? allMembers : undefined}
+        viewingMember={viewingMember}
+        onChangeMember={handleChangeMember}
       />
 
       {/* メインエリア */}
@@ -205,7 +231,7 @@ function HomeContent() {
                 ? "月報を選択するか、新規作成してください"
                 : "プロフィールを設定してください"}
             </p>
-            {member && (
+            {member && isViewingOwn && (
               <div className="mt-4 flex gap-3">
                 <button
                   onClick={() => setSidebarOpen(true)}
@@ -237,7 +263,7 @@ function HomeContent() {
         {viewMode === "view" && selectedReport && (
           <ReportViewer
             report={selectedReport}
-            onEdit={() => setViewMode("form-edit")}
+            onEdit={isViewingOwn ? () => setViewMode("form-edit") : undefined}
           />
         )}
       </main>

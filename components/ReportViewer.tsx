@@ -6,7 +6,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 interface ReportViewerProps {
   report: Report;
-  onEdit: () => void;
+  onEdit?: () => void;
 }
 
 function formatMonth(month: string): string {
@@ -232,9 +232,11 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
               </button>
             )}
 
-            <button onClick={onEdit} className="btn-secondary">
-              編集
-            </button>
+            {onEdit && (
+              <button onClick={onEdit} className="btn-secondary">
+                編集
+              </button>
+            )}
           </div>
         </div>
 

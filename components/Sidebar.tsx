@@ -10,6 +10,10 @@ interface SidebarProps {
   onNewReport: () => void;
   isOpen: boolean;
   onClose: () => void;
+  // 管理者用
+  allMembers?: Member[];
+  viewingMember?: Member | null;
+  onChangeMember?: (member: Member) => void;
 }
 
 function formatMonth(month: string): string {
@@ -40,10 +44,16 @@ export default function Sidebar({
   onNewReport,
   isOpen,
   onClose,
+  allMembers,
+  viewingMember,
+  onChangeMember,
 }: SidebarProps) {
+  const isAdmin = member?.permission === "admin" && allMembers && allMembers.length > 0;
+  const isViewingOwn = !viewingMember || viewingMember.id === member?.id;
+
   const handleSelectReport = (report: Report) => {
     onSelectReport(report);
-    onClose(); // モバイルでは選択後に閉じる
+    onClose();
   };
 
   const handleNewReport = () => {
@@ -71,13 +81,34 @@ export default function Sidebar({
         `}
         style={{ width: "260px" }}
       >
+        {/* 管理者用メンバー切り替え */}
+        {isAdmin && onChangeMember && (
+          <div className="px-3 py-2 border-b border-gray-100 bg-purple-50">
+            <p className="text-[10px] text-purple-500 font-semibold uppercase tracking-wider mb-1">閲覧メンバー</p>
+            <select
+              value={viewingMember?.id || member?.id || ""}
+              onChange={(e) => {
+                const selected = allMembers!.find((m) => m.id === e.target.value);
+                if (selected) onChangeMember(selected);
+              }}
+              className="w-full text-xs border border-purple-200 rounded-lg px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:border-purple-400"
+            >
+              {allMembers!.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}{m.role ? ` (${m.role})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* 月報一覧 */}
         <div className="flex flex-col flex-1 min-h-0">
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               月報一覧
             </span>
-            {member && (
+            {member && isViewingOwn && (
               <button
                 onClick={handleNewReport}
                 className="text-[#0f6e56] text-xs font-medium hover:underline"
@@ -95,13 +126,17 @@ export default function Sidebar({
             ) : reports.length === 0 ? (
               <div className="px-4 py-4 text-xs text-gray-400 text-center">
                 月報がありません
-                <br />
-                <button
-                  onClick={handleNewReport}
-                  className="mt-2 text-[#0f6e56] hover:underline"
-                >
-                  ＋ 新規作成
-                </button>
+                {isViewingOwn && (
+                  <>
+                    <br />
+                    <button
+                      onClick={handleNewReport}
+                      className="mt-2 text-[#0f6e56] hover:underline"
+                    >
+                      ＋ 新規作成
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <ul className="py-1">
