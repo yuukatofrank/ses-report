@@ -189,7 +189,7 @@ export default function ReportForm({
               />
             </div>
             <div>
-              <label className="label">学んだこと・気づき</label>
+              <label className="label">学んだこと・気づき・反省点</label>
               <textarea
                 value={form.learnings}
                 onChange={(e) => update("learnings", e.target.value)}

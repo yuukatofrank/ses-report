@@ -225,7 +225,7 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
               <Section label="発生した問題・トラブル" value={report.issues} />
             </div>
             <div className="pt-4">
-              <Section label="学んだこと・気づき" value={report.learnings} />
+              <Section label="学んだこと・気づき・反省点" value={report.learnings} />
             </div>
             <div className="pt-4">
               <Section label="来月の課題・目標" value={report.next_month} />

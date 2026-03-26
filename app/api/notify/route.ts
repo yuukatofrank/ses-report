@@ -133,7 +133,7 @@ export async function POST(request: Request) {
         learnings
           ? `
       <div class="section">
-        <div class="section-label">学んだこと・気づき</div>
+        <div class="section-label">学んだこと・気づき・反省点</div>
         <div class="section-body">${learnings}</div>
       </div>
       <hr class="divider">`
