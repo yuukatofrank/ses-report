@@ -36,6 +36,13 @@ function statusBadge(status: string) {
       </span>
     );
   }
+  if (status === "returned") {
+    return (
+      <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full">
+        差し戻し
+      </span>
+    );
+  }
   return (
     <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">
       下書き

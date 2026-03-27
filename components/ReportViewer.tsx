@@ -9,6 +9,7 @@ interface ReportViewerProps {
   onEdit?: () => void;
   onSubmit?: () => Promise<void>;
   onReview?: () => Promise<void>;
+  onReturn?: () => Promise<void>;
   isAdmin?: boolean;
 }
 
@@ -37,9 +38,10 @@ function Section({
   );
 }
 
-export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdmin }: ReportViewerProps) {
+export default function ReportViewer({ report, onEdit, onSubmit, onReview, onReturn, isAdmin }: ReportViewerProps) {
   const isSubmitted = report.status === "submitted";
   const isReviewed = report.status === "reviewed";
+  const isReturned = report.status === "returned";
   const [reviewing, setReviewing] = useState(false);
   const defaultEmail = process.env.NEXT_PUBLIC_SUPERVISOR_EMAIL || "";
 
@@ -250,10 +252,12 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
                     ? "bg-[#0f6e56] text-white"
                     : isSubmitted
                     ? "bg-blue-500 text-white"
+                    : isReturned
+                    ? "bg-orange-500 text-white"
                     : "bg-gray-200 text-gray-600"
                 }`}
               >
-                {isReviewed ? "確認済み" : isSubmitted ? "提出済み" : "下書き"}
+                {isReviewed ? "確認済み" : isSubmitted ? "提出済み" : isReturned ? "差し戻し" : "下書き"}
               </span>
             </div>
             <p className="text-sm text-gray-500">
@@ -285,8 +289,19 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
               </button>
             )}
 
-            {/* 提出するボタン（下書きのみ） */}
-            {report.status === "draft" && onSubmit && (
+            {/* 差し戻しボタン（管理者 かつ 提出済みのみ） */}
+            {isAdmin && isSubmitted && onReturn && (
+              <button
+                onClick={async () => { await onReturn(); }}
+                className="flex items-center gap-1.5 bg-orange-500 text-white px-3 py-1.5
+                           rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
+              >
+                ↩ 差し戻す
+              </button>
+            )}
+
+            {/* 提出するボタン（下書き・差し戻し） */}
+            {(report.status === "draft" || report.status === "returned") && onSubmit && (
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
@@ -346,8 +361,8 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
           更新: {new Date(report.updated_at).toLocaleDateString("ja-JP")}
         </p>
 
-        {/* AI 過去比較分析（結果は全員表示、実行は管理者のみ） */}
-        {(isAdmin || analysis) && (
+        {/* AI 過去比較分析（管理者 or 差し戻し時は報告者も閲覧可） */}
+        {(isAdmin || analysis) && (isAdmin || isReturned || !!analysis) && (
           <div className="mt-5 card p-5 border-l-4 border-l-purple-400">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
@@ -390,8 +405,8 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
           </div>
         )}
 
-        {/* AIレポート分析（結果は全員表示、実行は管理者のみ） */}
-        {(isAdmin || insight) && (
+        {/* AIレポート分析（管理者 or 差し戻し時は報告者も閲覧可） */}
+        {(isAdmin || insight) && (isAdmin || isReturned || !!insight) && (
           <div className="mt-5 card p-5 border-l-4 border-l-amber-400">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">

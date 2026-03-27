@@ -218,6 +218,20 @@ function HomeContent() {
     }
   };
 
+  const handleReturnReport = async () => {
+    if (!selectedReport) return;
+    const res = await fetch(`/api/reports/${selectedReport.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...selectedReport, status: "returned" }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setSelectedReport(updated);
+      if (viewingMember) await fetchReports(viewingMember.id);
+    }
+  };
+
   const handleReviewReport = async () => {
     if (!selectedReport) return;
     const res = await fetch(`/api/reports/${selectedReport.id}`, {
@@ -332,6 +346,7 @@ function HomeContent() {
             report={selectedReport}
             onEdit={isOwnReport && selectedReport?.status !== "reviewed" ? handleEditReport : undefined}
             onSubmit={isOwnReport && selectedReport?.status !== "reviewed" ? handleSubmitReport : undefined}
+            onReturn={member?.permission === "admin" ? handleReturnReport : undefined}
             onReview={member?.permission === "admin" ? handleReviewReport : undefined}
             isAdmin={member?.permission === "admin"}
           />
