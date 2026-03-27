@@ -9,7 +9,7 @@ interface ReportViewerProps {
   onEdit?: () => void;
   onSubmit?: () => Promise<void>;
   onReview?: () => Promise<void>;
-  onReturn?: () => Promise<void>;
+  onReturn?: (reason?: string) => Promise<void>;
   isAdmin?: boolean;
 }
 
@@ -43,6 +43,11 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
   const isReviewed = report.status === "reviewed";
   const isReturned = report.status === "returned";
   const [reviewing, setReviewing] = useState(false);
+
+  // 差し戻しモーダル
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const [returning, setReturning] = useState(false);
   const defaultEmail = process.env.NEXT_PUBLIC_SUPERVISOR_EMAIL || "";
 
   // AI過去比較分析
@@ -292,7 +297,7 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
             {/* 差し戻しボタン（管理者 かつ 提出済みのみ） */}
             {isAdmin && isSubmitted && onReturn && (
               <button
-                onClick={async () => { await onReturn(); }}
+                onClick={() => { setReturnReason(""); setShowReturnModal(true); }}
                 className="flex items-center gap-1.5 bg-orange-500 text-white px-3 py-1.5
                            rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
               >
@@ -540,6 +545,55 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
           )}
         </div>
       </div>
+
+      {/* 差し戻しモーダル */}
+      {showReturnModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h2 className="text-base font-bold text-gray-800 mb-1">差し戻し確認</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              {report.member_name}さんの{formatMonth(report.month)}分の月報を差し戻します
+            </p>
+            <div>
+              <label className="label">差し戻し理由（任意）</label>
+              <textarea
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                className="input-field w-full resize-y"
+                rows={4}
+                placeholder="修正してほしい点や理由を記入してください..."
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={() => setShowReturnModal(false)}
+                className="btn-secondary flex-1"
+                disabled={returning}
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={async () => {
+                  if (!onReturn) return;
+                  setReturning(true);
+                  try {
+                    await onReturn(returnReason.trim() || undefined);
+                    setShowReturnModal(false);
+                  } finally {
+                    setReturning(false);
+                  }
+                }}
+                disabled={returning}
+                className="flex-1 bg-orange-500 text-white py-2 px-4 rounded-lg text-sm
+                           font-medium hover:bg-orange-600 transition-colors disabled:opacity-50"
+              >
+                {returning ? "処理中..." : "↩ 差し戻す"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 報告モーダル */}
       {showNotifyModal && (
