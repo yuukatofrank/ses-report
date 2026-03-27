@@ -3,10 +3,11 @@ import { createSupabaseAdminClient } from "@/lib/supabase";
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const adminClient = createSupabaseAdminClient();
-  const { error } = await adminClient.auth.admin.deleteUser(params.id);
+  const { error } = await adminClient.auth.admin.deleteUser(id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
