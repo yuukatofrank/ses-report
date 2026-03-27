@@ -10,6 +10,13 @@ export async function POST(request: Request) {
 
   const supabaseAdmin = createSupabaseAdminClient();
 
+  // 未確認ユーザーが既に存在する場合は削除してから再招待
+  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+  const existing = users.find((u) => u.email === email && !u.email_confirmed_at);
+  if (existing) {
+    await supabaseAdmin.auth.admin.deleteUser(existing.id);
+  }
+
   const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
     redirectTo: `${redirectTo}/auth/set-password`,
   });
