@@ -301,8 +301,8 @@ export default function ReportViewer({ report, onEdit, onReview, isAdmin }: Repo
           更新: {new Date(report.updated_at).toLocaleDateString("ja-JP")}
         </p>
 
-        {/* AI 過去比較分析 */}
-        <div className="mt-5 card p-5 border-l-4 border-l-purple-400">
+        {/* AI 過去比較分析（管理者のみ） */}
+        {isAdmin && <div className="mt-5 card p-5 border-l-4 border-l-purple-400">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
               🔍 AI過去比較分析
@@ -339,7 +339,7 @@ export default function ReportViewer({ report, onEdit, onReview, isAdmin }: Repo
           ) : (
             <p className="text-sm text-gray-400">「分析を実行」ボタンを押すと、過去の報告書と比較した分析結果が表示されます。</p>
           )}
-        </div>
+        </div>}
 
         {/* コメントセクション */}
         <div className="mt-6">
