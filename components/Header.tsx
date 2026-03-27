@@ -55,7 +55,7 @@ export default function Header({ member, onEditProfile, onToggleSidebar }: Heade
       <div className="flex items-center gap-2">
         {member && (
           <span className="hidden md:block text-white/70 text-sm truncate max-w-[160px]">
-            {member.name}{member.role ? ` · ${member.role}` : ""}
+            {member.name}
           </span>
         )}
 

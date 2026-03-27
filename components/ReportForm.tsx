@@ -25,7 +25,6 @@ export default function ReportForm({
     month: report?.month ?? defaultMonth,
     member_name: report?.member_name ?? member.name,
     project: report?.project ?? "",
-    role: report?.role ?? member.role ?? "",
     works: report?.works ?? "",
     achievements: report?.achievements ?? "",
     issues: report?.issues ?? "",
@@ -74,7 +73,6 @@ export default function ReportForm({
           month: form.month,
           member_name: form.member_name,
           project: form.project || null,
-          role: form.role || null,
           works: form.works || null,
           achievements: form.achievements || null,
           issues: form.issues || null,
@@ -139,16 +137,6 @@ export default function ReportForm({
                 onChange={(e) => update("project", e.target.value)}
                 className="input-field"
                 placeholder="〇〇システム開発"
-              />
-            </div>
-            <div>
-              <label className="label">役割・ポジション</label>
-              <input
-                type="text"
-                value={form.role}
-                onChange={(e) => update("role", e.target.value)}
-                className="input-field"
-                placeholder="フロントエンドエンジニア"
               />
             </div>
           </div>

@@ -31,7 +31,6 @@ function HomeContent() {
   // プロフィールモーダル
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileName, setProfileName] = useState("");
-  const [profileRole, setProfileRole] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
@@ -120,7 +119,6 @@ function HomeContent() {
         body: JSON.stringify({
           user_id: userId,
           name: profileName.trim(),
-          role: profileRole.trim(),
           email: userEmail,
         }),
       });
@@ -138,7 +136,6 @@ function HomeContent() {
 
   const openEditProfile = () => {
     setProfileName(member?.name || "");
-    setProfileRole(member?.role || "");
     setShowProfileModal(true);
   };
 
@@ -317,7 +314,7 @@ function HomeContent() {
               {member ? "プロフィール編集" : "プロフィール設定"}
             </h2>
             <p className="text-xs text-gray-500 mb-4">
-              {member ? "名前・役職を変更できます" : "月報を作成する前に名前を登録してください"}
+              {member ? "名前を変更できます" : "月報を作成する前に名前を登録してください"}
             </p>
             <div className="space-y-3">
               <div>
@@ -329,16 +326,6 @@ function HomeContent() {
                   className="input-field"
                   placeholder="山田 太郎"
                   autoFocus
-                />
-              </div>
-              <div>
-                <label className="label">役職・ポジション</label>
-                <input
-                  type="text"
-                  value={profileRole}
-                  onChange={(e) => setProfileRole(e.target.value)}
-                  className="input-field"
-                  placeholder="フロントエンドエンジニア"
                 />
               </div>
             </div>

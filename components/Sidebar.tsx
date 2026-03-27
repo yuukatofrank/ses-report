@@ -102,7 +102,7 @@ export default function Sidebar({
             >
               {allMembers!.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.name}{m.role ? ` (${m.role})` : ""}
+                  {m.name}
                 </option>
               ))}
             </select>

@@ -163,7 +163,6 @@ export default function ReportViewer({ report, onEdit, onReview, isAdmin }: Repo
           memberName: report.member_name,
           month: report.month,
           project: report.project,
-          role: report.role,
           works: report.works,
           achievements: report.achievements,
           issues: report.issues,
@@ -209,7 +208,6 @@ export default function ReportViewer({ report, onEdit, onReview, isAdmin }: Repo
             </div>
             <p className="text-sm text-gray-500">
               {report.member_name}
-              {report.role ? ` · ${report.role}` : ""}
               {report.project ? ` · ${report.project}` : ""}
             </p>
           </div>
