@@ -11,6 +11,7 @@ interface ReportViewerProps {
   onReview?: () => Promise<void>;
   onReturn?: (reason?: string) => Promise<void>;
   isAdmin?: boolean;
+  canEditOrSubmit?: boolean; // 報告書の作成者本人かつ非管理者のみtrue
 }
 
 function formatMonth(month: string): string {
@@ -38,7 +39,7 @@ function Section({
   );
 }
 
-export default function ReportViewer({ report, onEdit, onSubmit, onReview, onReturn, isAdmin }: ReportViewerProps) {
+export default function ReportViewer({ report, onEdit, onSubmit, onReview, onReturn, isAdmin, canEditOrSubmit }: ReportViewerProps) {
   const isSubmitted = report.status === "submitted";
   const isReviewed = report.status === "reviewed";
   const isReturned = report.status === "returned";
@@ -305,8 +306,8 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
               </button>
             )}
 
-            {/* 提出するボタン（下書き・差し戻し） */}
-            {(report.status === "draft" || report.status === "returned") && onSubmit && (
+            {/* 提出するボタン（下書き・差し戻し）：作成者本人のみ */}
+            {canEditOrSubmit && (report.status === "draft" || report.status === "returned") && onSubmit && (
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
@@ -317,8 +318,8 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
               </button>
             )}
 
-            {/* 再送信ボタン（提出済み かつ 自分の報告書のみ） */}
-            {isSubmitted && !!onEdit && (
+            {/* 再送信ボタン（提出済み かつ 作成者本人のみ） */}
+            {canEditOrSubmit && isSubmitted && !!onEdit && (
               <button
                 onClick={() => {
                   setSent(false);
@@ -333,7 +334,7 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
               </button>
             )}
 
-            {onEdit && (
+            {canEditOrSubmit && onEdit && (
               <button onClick={onEdit} className="btn-secondary">
                 編集
               </button>

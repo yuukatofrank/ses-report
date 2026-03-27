@@ -162,6 +162,8 @@ function HomeContent() {
   const isViewingOwn = !viewingMember || viewingMember.id === member?.id;
   // 選択中の報告書が自分のものかどうか（管理者が他人の報告書を見ている場合はfalse）
   const isOwnReport = selectedReport ? selectedReport.member_id === member?.id : isViewingOwn;
+  // 編集・提出ができるのは「報告書の作成者本人 かつ 管理者でない」場合のみ
+  const canEditOrSubmit = isOwnReport && member?.permission !== "admin";
 
   const handleSaveReport = async (data: Partial<Report>, status: "draft" | "submitted") => {
     if (viewMode === "form-new") {
@@ -369,11 +371,12 @@ function HomeContent() {
         {viewMode === "view" && selectedReport && (
           <ReportViewer
             report={selectedReport}
-            onEdit={isOwnReport && selectedReport?.status !== "reviewed" ? handleEditReport : undefined}
-            onSubmit={isOwnReport && selectedReport?.status !== "reviewed" ? handleSubmitReport : undefined}
+            onEdit={canEditOrSubmit && selectedReport?.status !== "reviewed" ? handleEditReport : undefined}
+            onSubmit={canEditOrSubmit && selectedReport?.status !== "reviewed" ? handleSubmitReport : undefined}
             onReturn={member?.permission === "admin" ? handleReturnReport : undefined}
             onReview={member?.permission === "admin" ? handleReviewReport : undefined}
             isAdmin={member?.permission === "admin"}
+            canEditOrSubmit={canEditOrSubmit}
           />
         )}
       </main>
