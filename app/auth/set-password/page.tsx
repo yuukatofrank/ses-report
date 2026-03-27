@@ -16,7 +16,30 @@ function SetPasswordForm() {
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
-    // callbackでサーバー側コード交換済みなのでセッションを取得するだけ
+    // Supabaseはimplicit flow（ハッシュ）でリダイレクトするのでハッシュからトークンを取得
+    const hash = window.location.hash;
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+
+      if (accessToken && refreshToken) {
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(({ data, error }) => {
+            if (!error && data.session?.user?.email) {
+              setEmail(data.session.user.email);
+              setInitializing(false);
+              // ハッシュをURLから除去
+              window.history.replaceState(null, "", window.location.pathname);
+            } else {
+              router.push("/auth?error=invalid_invite");
+            }
+          });
+        return;
+      }
+    }
+
+    // ハッシュなし: 既存セッションを確認
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user?.email) {
         setEmail(data.session.user.email);
