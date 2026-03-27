@@ -287,27 +287,35 @@ export default function AdminPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={() => handleTogglePermission(u)}
-                      disabled={updatingPermission === u.auth_id}
-                      className={`text-xs border px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
-                        u.permission === "admin"
-                          ? "text-purple-500 hover:text-purple-700 border-purple-200 hover:border-purple-400"
-                          : "text-gray-400 hover:text-purple-600 border-gray-200 hover:border-purple-300"
-                      }`}
-                    >
-                      {updatingPermission === u.auth_id
-                        ? "変更中..."
-                        : u.permission === "admin" ? "一般に変更" : "管理者に変更"}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(u)}
-                      disabled={deleting === u.auth_id}
-                      className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400
-                                 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      {deleting === u.auth_id ? "削除中..." : "削除"}
-                    </button>
+                    {u.email === adminEmail ? (
+                      <span className="text-xs bg-purple-100 text-purple-500 px-3 py-1.5 rounded-lg">
+                        最高権限
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleTogglePermission(u)}
+                          disabled={updatingPermission === u.auth_id}
+                          className={`text-xs border px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                            u.permission === "admin"
+                              ? "text-purple-500 hover:text-purple-700 border-purple-200 hover:border-purple-400"
+                              : "text-gray-400 hover:text-purple-600 border-gray-200 hover:border-purple-300"
+                          }`}
+                        >
+                          {updatingPermission === u.auth_id
+                            ? "変更中..."
+                            : u.permission === "admin" ? "一般に変更" : "管理者に変更"}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(u)}
+                          disabled={deleting === u.auth_id}
+                          className="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400
+                                     px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {deleting === u.auth_id ? "削除中..." : "削除"}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </li>
               ))}
