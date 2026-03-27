@@ -16,42 +16,15 @@ function SetPasswordForm() {
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
-    // PKCEフロー（codeパラメータあり）の場合はコード交換を試みる
-    const code = searchParams.get("code");
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).catch(() => {
-        // 失敗してもonAuthStateChangeで拾う
-      });
-    }
-
-    // セッション確立を待つ（ハッシュトークン含む）
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user?.email) {
-        setEmail(session.user.email);
-        setInitializing(false);
-      }
-    });
-
-    // 既存セッションも確認
+    // callbackでサーバー側コード交換済みなのでセッションを取得するだけ
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user?.email) {
         setEmail(data.session.user.email);
         setInitializing(false);
+      } else {
+        router.push("/auth?error=invalid_invite");
       }
     });
-
-    // 10秒待ってセッションが取れなければログインへ
-    const timeout = setTimeout(() => {
-      setInitializing((prev) => {
-        if (prev) router.push("/auth?error=invalid_invite");
-        return false;
-      });
-    }, 10000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       const invited = searchParams.get("invited");
       if (invited === "true") {
-        return NextResponse.redirect(`${origin}/auth/reset-password`);
+        return NextResponse.redirect(`${origin}/auth/set-password`);
       }
       return NextResponse.redirect(`${origin}/`);
     }
