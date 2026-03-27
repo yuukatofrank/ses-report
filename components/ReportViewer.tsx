@@ -127,7 +127,12 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
       if (res.ok) {
         const data = await res.json();
         setAnalysis(data.analysis);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setAnalysis(`分析に失敗しました: ${err.error || res.status}`);
       }
+    } catch (e) {
+      setAnalysis("分析中にエラーが発生しました");
     } finally {
       setAnalysisLoading(false);
     }
