@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -65,7 +65,7 @@ ${previousSummary}
 （前月からの改善や成長を認める）`;
 
     const message = await client.messages.create({
-      model: "claude-sonnet-4-5",
+      model: "claude-opus-4-5",
       max_tokens: 800,
       messages: [{ role: "user", content: prompt }],
     });
@@ -75,6 +75,7 @@ ${previousSummary}
   }
 
   // 分析結果をDBに保存
+  const supabase = createSupabaseAdminClient();
   await supabase
     .from("reports")
     .update({ ai_analysis: analysis })

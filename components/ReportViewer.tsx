@@ -292,8 +292,8 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
               </button>
             )}
 
-            {/* 再送信ボタン（提出済みのみ） */}
-            {isSubmitted && (
+            {/* 再送信ボタン（提出済み かつ 自分の報告書のみ） */}
+            {isSubmitted && !!onEdit && (
               <button
                 onClick={() => {
                   setSent(false);
