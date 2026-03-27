@@ -31,8 +31,9 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // 未認証ユーザーを /auth にリダイレクト
-  if (!user && pathname !== "/auth") {
+  // 未認証ユーザーを /auth にリダイレクト（認証フロー系ページは除外）
+  const authPublicPaths = ["/auth", "/auth/set-password", "/auth/callback", "/auth/forgot-password", "/auth/reset-password"];
+  if (!user && !authPublicPaths.includes(pathname)) {
     return NextResponse.redirect(new URL("/auth", request.url));
   }
 
