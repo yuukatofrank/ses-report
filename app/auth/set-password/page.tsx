@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function SetPasswordPage() {
+function SetPasswordForm() {
   const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -16,31 +16,42 @@ export default function SetPasswordPage() {
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
-    const init = async () => {
-      // PKCEフロー（codeパラメータあり）の場合はコード交換
-      const code = searchParams.get("code");
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
-      }
+    // PKCEフロー（codeパラメータあり）の場合はコード交換を試みる
+    const code = searchParams.get("code");
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).catch(() => {
+        // 失敗してもonAuthStateChangeで拾う
+      });
+    }
 
-      // セッション取得（ハッシュトークンも自動処理）
-      const { data } = await supabase.auth.getSession();
+    // セッション確立を待つ（ハッシュトークン含む）
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user?.email) {
+        setEmail(session.user.email);
+        setInitializing(false);
+      }
+    });
+
+    // 既存セッションも確認
+    supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user?.email) {
         setEmail(data.session.user.email);
-      } else {
-        // セッションが取れない場合は少し待ってリトライ（ハッシュ処理のタイミング）
-        setTimeout(async () => {
-          const { data: retryData } = await supabase.auth.getSession();
-          if (retryData.session?.user?.email) {
-            setEmail(retryData.session.user.email);
-          } else {
-            router.push("/auth?error=invalid_invite");
-          }
-        }, 1000);
+        setInitializing(false);
       }
-      setInitializing(false);
+    });
+
+    // 10秒待ってセッションが取れなければログインへ
+    const timeout = setTimeout(() => {
+      setInitializing((prev) => {
+        if (prev) router.push("/auth?error=invalid_invite");
+        return false;
+      });
+    }, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
     };
-    init();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -71,7 +82,10 @@ export default function SetPasswordPage() {
   if (initializing) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f7f7f5" }}>
-        <div className="text-gray-500 text-sm">読み込み中...</div>
+        <div className="text-center">
+          <div className="text-gray-500 text-sm mb-2">認証情報を確認中...</div>
+          <div className="text-gray-300 text-xs">しばらくお待ちください</div>
+        </div>
       </div>
     );
   }
@@ -146,5 +160,17 @@ export default function SetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f7f7f5" }}>
+        <div className="text-gray-500 text-sm">読み込み中...</div>
+      </div>
+    }>
+      <SetPasswordForm />
+    </Suspense>
   );
 }
