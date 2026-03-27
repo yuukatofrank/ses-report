@@ -22,10 +22,17 @@ function formatMonth(month: string): string {
 }
 
 function statusBadge(status: string) {
-  if (status === "final") {
+  if (status === "reviewed") {
     return (
       <span className="text-[10px] bg-[#0f6e56] text-white px-1.5 py-0.5 rounded-full">
-        確定
+        確認済み
+      </span>
+    );
+  }
+  if (status === "submitted") {
+    return (
+      <span className="text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full">
+        提出済み
       </span>
     );
   }

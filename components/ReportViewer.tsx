@@ -7,6 +7,8 @@ import { createSupabaseBrowserClient } from "@/lib/supabase";
 interface ReportViewerProps {
   report: Report;
   onEdit?: () => void;
+  onReview?: () => Promise<void>;
+  isAdmin?: boolean;
 }
 
 function formatMonth(month: string): string {
@@ -34,8 +36,10 @@ function Section({
   );
 }
 
-export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
-  const isFinal = report.status === "final";
+export default function ReportViewer({ report, onEdit, onReview, isAdmin }: ReportViewerProps) {
+  const isSubmitted = report.status === "submitted";
+  const isReviewed = report.status === "reviewed";
+  const [reviewing, setReviewing] = useState(false);
   const defaultEmail = process.env.NEXT_PUBLIC_SUPERVISOR_EMAIL || "";
 
   // AI分析
@@ -193,12 +197,14 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
               </h2>
               <span
                 className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  isFinal
+                  isReviewed
                     ? "bg-[#0f6e56] text-white"
+                    : isSubmitted
+                    ? "bg-blue-500 text-white"
                     : "bg-gray-200 text-gray-600"
                 }`}
               >
-                {isFinal ? "確定" : "下書き"}
+                {isReviewed ? "確認済み" : isSubmitted ? "提出済み" : "下書き"}
               </span>
             </div>
             <p className="text-sm text-gray-500">
@@ -216,8 +222,23 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
               </span>
             )}
 
-            {/* 報告するボタン（確定済みのみ） */}
-            {isFinal && (
+            {/* 確認済みにするボタン（admin向け・提出済みのみ） */}
+            {isAdmin && isSubmitted && onReview && (
+              <button
+                onClick={async () => {
+                  setReviewing(true);
+                  try { await onReview(); } finally { setReviewing(false); }
+                }}
+                disabled={reviewing}
+                className="flex items-center gap-1.5 bg-[#0f6e56] text-white px-3 py-1.5
+                           rounded-lg text-sm font-medium hover:bg-[#0d5f49] transition-colors disabled:opacity-50"
+              >
+                {reviewing ? "処理中..." : "✓ 確認済みにする"}
+              </button>
+            )}
+
+            {/* 報告するボタン（提出済みのみ） */}
+            {isSubmitted && (
               <button
                 onClick={() => {
                   setSent(false);
@@ -241,9 +262,9 @@ export default function ReportViewer({ report, onEdit }: ReportViewerProps) {
         </div>
 
         {/* 下書きの場合の注意 */}
-        {!isFinal && (
+        {report.status === "draft" && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 mb-5 text-sm text-yellow-700">
-            ⚠️ 下書き状態です。「確定保存」にしてから上司へ報告できます。
+            ⚠️ 下書き状態です。「提出する」にしてから上司へ報告できます。
           </div>
         )}
 

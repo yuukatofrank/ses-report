@@ -154,7 +154,7 @@ function HomeContent() {
 
   const isViewingOwn = !viewingMember || viewingMember.id === member?.id;
 
-  const handleSaveReport = async (data: Partial<Report>, status: "draft" | "final") => {
+  const handleSaveReport = async (data: Partial<Report>, status: "draft" | "submitted") => {
     if (viewMode === "form-new") {
       const res = await fetch("/api/reports", {
         method: "POST",
@@ -184,6 +184,38 @@ function HomeContent() {
       } else {
         alert("更新に失敗しました");
       }
+    }
+  };
+
+  const handleEditReport = async () => {
+    if (!selectedReport) return;
+    // 提出済みの場合は編集前にdraftに戻す
+    if (selectedReport.status === "submitted") {
+      const res = await fetch(`/api/reports/${selectedReport.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...selectedReport, status: "draft" }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setSelectedReport(updated);
+        if (member) await fetchReports(member.id);
+      }
+    }
+    setViewMode("form-edit");
+  };
+
+  const handleReviewReport = async () => {
+    if (!selectedReport) return;
+    const res = await fetch(`/api/reports/${selectedReport.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...selectedReport, status: "reviewed" }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setSelectedReport(updated);
+      if (viewingMember) await fetchReports(viewingMember.id);
     }
   };
 
@@ -270,7 +302,9 @@ function HomeContent() {
         {viewMode === "view" && selectedReport && (
           <ReportViewer
             report={selectedReport}
-            onEdit={isViewingOwn ? () => setViewMode("form-edit") : undefined}
+            onEdit={isViewingOwn ? handleEditReport : undefined}
+            onReview={member?.permission === "admin" ? handleReviewReport : undefined}
+            isAdmin={member?.permission === "admin"}
           />
         )}
       </main>

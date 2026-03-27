@@ -6,7 +6,7 @@ import { Report, Member } from "@/types";
 interface ReportFormProps {
   member: Member;
   report?: Report;
-  onSave: (data: Partial<Report>, status: "draft" | "final") => Promise<void>;
+  onSave: (data: Partial<Report>, status: "draft" | "submitted") => Promise<void>;
   onDelete?: () => Promise<void>;
   onCancel: () => void;
 }
@@ -65,7 +65,7 @@ export default function ReportForm({
     }
   };
 
-  const handleSave = async (status: "draft" | "final") => {
+  const handleSave = async (status: "draft" | "submitted") => {
     setSaving(true);
     try {
       await onSave(
@@ -255,11 +255,11 @@ export default function ReportForm({
               下書き保存
             </button>
             <button
-              onClick={() => handleSave("final")}
+              onClick={() => handleSave("submitted")}
               disabled={saving}
               className="btn-primary"
             >
-              {saving ? "保存中..." : "確定保存"}
+              {saving ? "提出中..." : "提出する"}
             </button>
           </div>
         </div>
