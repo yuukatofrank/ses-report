@@ -13,6 +13,9 @@ export default function AdminPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [updatingPermission, setUpdatingPermission] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [inviteResult, setInviteResult] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
@@ -50,6 +53,31 @@ export default function AdminPage() {
       }
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) return;
+    setInviting(true);
+    setInviteResult(null);
+    try {
+      const res = await fetch("/api/admin/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          redirectTo: window.location.origin,
+        }),
+      });
+      if (res.ok) {
+        setInviteResult({ type: "success", text: `${inviteEmail} に招待メールを送信しました` });
+        setInviteEmail("");
+      } else {
+        const err = await res.json();
+        setInviteResult({ type: "error", text: err.error || "送信に失敗しました" });
+      }
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -109,6 +137,35 @@ export default function AdminPage() {
       </div>
 
       <div className="pt-[72px] max-w-3xl mx-auto px-4 pb-10">
+        {/* 招待フォーム */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-5">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">ユーザーを招待する</h2>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => { setInviteEmail(e.target.value); setInviteResult(null); }}
+              placeholder="メールアドレスを入力"
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-[#0f6e56]/40 focus:border-[#0f6e56]"
+              onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+            />
+            <button
+              onClick={handleInvite}
+              disabled={!inviteEmail.trim() || inviting}
+              className="bg-[#0f6e56] text-white px-4 py-2 rounded-lg text-sm font-medium
+                         hover:bg-[#0d5f49] transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {inviting ? "送信中..." : "招待メール送信"}
+            </button>
+          </div>
+          {inviteResult && (
+            <p className={`text-xs mt-2 ${inviteResult.type === "success" ? "text-green-600" : "text-red-500"}`}>
+              {inviteResult.text}
+            </p>
+          )}
+        </div>
+
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-700">
             登録ユーザー一覧 <span className="text-gray-400 font-normal">({members.length}人)</span>

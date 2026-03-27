@@ -27,6 +27,10 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      const invited = searchParams.get("invited");
+      if (invited === "true") {
+        return NextResponse.redirect(`${origin}/auth/reset-password`);
+      }
       return NextResponse.redirect(`${origin}/`);
     }
   }
