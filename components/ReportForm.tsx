@@ -30,39 +30,12 @@ export default function ReportForm({
     issues: report?.issues ?? "",
     learnings: report?.learnings ?? "",
     next_month: report?.next_month ?? "",
-    ai_summary: report?.ai_summary ?? "",
   });
 
-  const [aiLoading, setAiLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
-
-  const handleAiFormat = async () => {
-    setAiLoading(true);
-    try {
-      const res = await fetch("/api/ai-format", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          works: form.works,
-          achievements: form.achievements,
-          issues: form.issues,
-          learnings: form.learnings,
-          nextMonth: form.next_month,
-        }),
-      });
-      const data = await res.json();
-      if (data.summary) {
-        update("ai_summary", data.summary);
-      }
-    } catch (e) {
-      alert("AI整形に失敗しました");
-    } finally {
-      setAiLoading(false);
-    }
-  };
 
   const handleSave = async (status: "draft" | "submitted") => {
     setSaving(true);
@@ -78,7 +51,6 @@ export default function ReportForm({
           issues: form.issues || null,
           learnings: form.learnings || null,
           next_month: form.next_month || null,
-          ai_summary: form.ai_summary || null,
         },
         status
       );
@@ -199,26 +171,6 @@ export default function ReportForm({
           </div>
         </div>
 
-        {/* AI整形 */}
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-2">
-            <p className="section-header mb-0">AI整形サマリー</p>
-            <button
-              onClick={handleAiFormat}
-              disabled={aiLoading}
-              className="btn-secondary text-xs px-3 py-1.5"
-            >
-              {aiLoading ? "整形中..." : "✨ AIで整形"}
-            </button>
-          </div>
-          <textarea
-            value={form.ai_summary}
-            onChange={(e) => update("ai_summary", e.target.value)}
-            className="textarea-field"
-            rows={6}
-            placeholder="「AIで整形」ボタンを押すと、業務内容から自動でサマリーを生成します"
-          />
-        </div>
 
         {/* アクションボタン */}
         <div className="flex items-center gap-3 pb-6">

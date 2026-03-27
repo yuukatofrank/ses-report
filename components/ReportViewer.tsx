@@ -218,7 +218,7 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
           issues: report.issues,
           learnings: report.learnings,
           nextMonth: report.next_month,
-          aiSummary: report.ai_summary,
+
           reportUrl: `${window.location.origin}?report_id=${report.id}`,
         }),
       });
@@ -322,17 +322,6 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
         </div>
 
 
-        {/* AI サマリー */}
-        {report.ai_summary && (
-          <div className="card p-5 mb-5 border-l-4 border-l-[#0f6e56]">
-            <p className="text-xs font-semibold text-[#0f6e56] uppercase tracking-wider mb-2">
-              ✨ AI整形サマリー
-            </p>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-              {report.ai_summary}
-            </p>
-          </div>
-        )}
 
         {/* 詳細 */}
         <div className="card p-5">

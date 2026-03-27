@@ -21,7 +21,6 @@ export async function POST(request: Request) {
     issues,
     learnings,
     nextMonth,
-    aiSummary,
     reportUrl,
   } = body;
 
@@ -86,15 +85,6 @@ export async function POST(request: Request) {
         <span>📅 報告月：${monthLabel}</span>
       </div>
 
-      ${
-        aiSummary
-          ? `
-      <div class="ai-box">
-        <div class="ai-label">✨ AI整形サマリー</div>
-        <div class="section-body">${aiSummary}</div>
-      </div>`
-          : ""
-      }
 
       ${
         works

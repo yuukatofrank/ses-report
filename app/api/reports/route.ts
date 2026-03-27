@@ -45,7 +45,6 @@ export async function POST(request: Request) {
       issues: body.issues || null,
       learnings: body.learnings || null,
       next_month: body.next_month || null,
-      ai_summary: body.ai_summary || null,
       status: body.status || "draft",
     })
     .select()

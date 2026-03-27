@@ -19,7 +19,6 @@ export interface Report {
   issues: string | null;
   learnings: string | null;
   next_month: string | null;
-  ai_summary: string | null;
   ai_analysis: string | null;
   ai_insight: { issues: string[]; improvements: string[]; growth: string[] } | null;
   status: "draft" | "submitted" | "reviewed";
