@@ -5,9 +5,13 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const invited = searchParams.get("invited");
 
   if (code) {
     const cookieStore = await cookies();
+    const redirectUrl = invited === "true" ? `${origin}/auth/set-password` : `${origin}/`;
+    const response = NextResponse.redirect(redirectUrl);
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -18,7 +22,7 @@ export async function GET(request: NextRequest) {
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              response.cookies.set(name, value, options)
             );
           },
         },
@@ -27,14 +31,9 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const invited = searchParams.get("invited");
-      if (invited === "true") {
-        return NextResponse.redirect(`${origin}/auth/set-password`);
-      }
-      return NextResponse.redirect(`${origin}/`);
+      return response;
     }
   }
 
-  // エラー時はログインページへ
   return NextResponse.redirect(`${origin}/auth?error=confirmation_failed`);
 }
