@@ -13,9 +13,23 @@ export default function ResetPasswordPage() {
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
-    // Supabaseがハッシュからセッションを復元するのを待つ
+    // implicit flow: ハッシュからトークンを取得してセッションを確立
+    const hash = window.location.hash;
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      if (accessToken && refreshToken) {
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(() => {
+            window.history.replaceState(null, "", window.location.pathname);
+          });
+        return;
+      }
+    }
     supabase.auth.getSession();
-  }, [supabase]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
