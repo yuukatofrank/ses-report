@@ -229,6 +229,21 @@ function HomeContent() {
       const updated = await res.json();
       setSelectedReport(updated);
       if (viewingMember) await fetchReports(viewingMember.id);
+
+      // 報告者へ確認完了メールを送信
+      if (viewingMember?.email) {
+        fetch("/api/notify-reviewed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            memberEmail: viewingMember.email,
+            memberName: selectedReport.member_name,
+            month: selectedReport.month,
+            project: selectedReport.project,
+            reportUrl: `${window.location.origin}?report_id=${selectedReport.id}`,
+          }),
+        });
+      }
     }
   };
 
