@@ -362,7 +362,7 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
           <div className="mt-5 card p-5 border-l-4 border-l-purple-400">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
-                🔍 AI過去比較分析
+                🔍 {isAdmin ? "AI過去比較分析" : "過去比較分析"}
               </p>
               {isAdmin && (
                 <button
@@ -406,7 +406,7 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
           <div className="mt-5 card p-5 border-l-4 border-l-amber-400">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">
-                🧠 AIレポート分析
+                🧠 {isAdmin ? "AIレポート分析" : "レポート分析"}
               </p>
               {isAdmin && (
                 <button
