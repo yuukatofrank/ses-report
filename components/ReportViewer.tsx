@@ -49,7 +49,7 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
 
   // AIレポート分析
   type Insight = { issues: string[]; improvements: string[]; growth: string[] };
-  const [insight, setInsight] = useState<Insight | null>(null);
+  const [insight, setInsight] = useState<Insight | null>(report.ai_insight ?? null);
   const [insightLoading, setInsightLoading] = useState(false);
 
   const runInsight = async () => {
@@ -105,6 +105,7 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
       setCurrentUserEmail(data.user?.email ?? null);
     });
     setAnalysis(report.ai_analysis || "");
+    setInsight(report.ai_insight ?? null);
     fetchComments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report.id]);
@@ -356,69 +357,75 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
           更新: {new Date(report.updated_at).toLocaleDateString("ja-JP")}
         </p>
 
-        {/* AI 過去比較分析（管理者のみ） */}
-        {isAdmin && <div className="mt-5 card p-5 border-l-4 border-l-purple-400">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
-              🔍 AI過去比較分析
-            </p>
-            <button
-              onClick={runAnalysis}
-              disabled={analysisLoading}
-              className="flex items-center gap-1.5 bg-purple-600 text-white px-3 py-1.5
-                         rounded-lg text-xs font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
-            >
-              {analysisLoading ? (
-                <>
-                  <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                  </svg>
-                  分析中...
-                </>
-              ) : analysis ? "再分析" : "🔍 分析を実行"}
-            </button>
-          </div>
-          {analysisLoading ? (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <svg className="animate-spin h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-              </svg>
-              過去の報告書と比較分析中...
+        {/* AI 過去比較分析（結果は全員表示、実行は管理者のみ） */}
+        {(isAdmin || analysis) && (
+          <div className="mt-5 card p-5 border-l-4 border-l-purple-400">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
+                🔍 AI過去比較分析
+              </p>
+              {isAdmin && (
+                <button
+                  onClick={runAnalysis}
+                  disabled={analysisLoading}
+                  className="flex items-center gap-1.5 bg-purple-600 text-white px-3 py-1.5
+                             rounded-lg text-xs font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+                >
+                  {analysisLoading ? (
+                    <>
+                      <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      </svg>
+                      分析中...
+                    </>
+                  ) : analysis ? "再分析" : "🔍 分析を実行"}
+                </button>
+              )}
             </div>
-          ) : analysis ? (
-            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-              {analysis}
-            </p>
-          ) : (
-            <p className="text-sm text-gray-400">「分析を実行」ボタンを押すと、過去の報告書と比較した分析結果が表示されます。</p>
-          )}
-        </div>}
+            {analysisLoading ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <svg className="animate-spin h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+                過去の報告書と比較分析中...
+              </div>
+            ) : analysis ? (
+              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {analysis}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-400">「分析を実行」ボタンを押すと、過去の報告書と比較した分析結果が表示されます。</p>
+            )}
+          </div>
+        )}
 
-        {/* AIレポート分析（管理者のみ） */}
-        {isAdmin && (
+        {/* AIレポート分析（結果は全員表示、実行は管理者のみ） */}
+        {(isAdmin || insight) && (
           <div className="mt-5 card p-5 border-l-4 border-l-amber-400">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">
                 🧠 AIレポート分析
               </p>
-              <button
-                onClick={runInsight}
-                disabled={insightLoading}
-                className="flex items-center gap-1.5 bg-amber-500 text-white px-3 py-1.5
-                           rounded-lg text-xs font-medium hover:bg-amber-600 transition-colors disabled:opacity-50"
-              >
-                {insightLoading ? (
-                  <>
-                    <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                    </svg>
-                    分析中...
-                  </>
-                ) : insight ? "再分析" : "🧠 分析を実行"}
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={runInsight}
+                  disabled={insightLoading}
+                  className="flex items-center gap-1.5 bg-amber-500 text-white px-3 py-1.5
+                             rounded-lg text-xs font-medium hover:bg-amber-600 transition-colors disabled:opacity-50"
+                >
+                  {insightLoading ? (
+                    <>
+                      <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      </svg>
+                      分析中...
+                    </>
+                  ) : insight ? "再分析" : "🧠 分析を実行"}
+                </button>
+              )}
             </div>
             {insightLoading ? (
               <div className="flex items-center gap-2 text-sm text-gray-400">

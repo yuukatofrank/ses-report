@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -44,6 +45,11 @@ export async function POST(request: Request) {
     // コードブロック（```json ... ```）が含まれる場合は除去
     const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     const result = JSON.parse(cleaned);
+
+    // DBに保存
+    const supabase = createSupabaseAdminClient();
+    await supabase.from("reports").update({ ai_insight: result }).eq("id", report.id);
+
     return NextResponse.json(result);
   } catch (e) {
     return NextResponse.json({ error: `分析結果の解析に失敗しました: ${text.slice(0, 100)}` }, { status: 500 });
