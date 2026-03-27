@@ -72,13 +72,14 @@ function HomeContent() {
         await fetchReports(profile.id);
 
         // 管理者の場合は全メンバーを取得
+        let membersList: Member[] = [];
         if (profile.permission === "admin") {
           const res = await fetch("/api/members");
           if (res.ok) {
-            const members = await res.json();
-            setAllMembers(members);
+            membersList = await res.json();
+            setAllMembers(membersList);
             // allMembersと同じオブジェクトで viewingMember を同期
-            const matched = members.find((m: Member) => m.id === profile.id);
+            const matched = membersList.find((m: Member) => m.id === profile.id);
             if (matched) setViewingMember(matched);
           }
         }
@@ -91,6 +92,15 @@ function HomeContent() {
             const report = await res.json();
             setSelectedReport(report);
             setViewMode("view");
+
+            // 管理者の場合はレポートのメンバーに viewingMember を切り替え
+            if (profile.permission === "admin" && membersList.length > 0) {
+              const reportMember = membersList.find((m: Member) => m.id === report.member_id);
+              if (reportMember) {
+                setViewingMember(reportMember);
+                await fetchReports(reportMember.id);
+              }
+            }
           }
         }
       }
@@ -230,21 +240,20 @@ function HomeContent() {
       setSelectedReport(updated);
       if (viewingMember) await fetchReports(viewingMember.id);
 
-      // 報告者へ差し戻しメールを送信
-      if (viewingMember?.email) {
-        fetch("/api/notify-returned", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            memberEmail: viewingMember.email,
-            memberName: selectedReport.member_name,
-            month: selectedReport.month,
-            project: selectedReport.project,
-            reason: reason || null,
-            reportUrl: `${window.location.origin}?report_id=${selectedReport.id}`,
-          }),
-        });
-      }
+      // 報告者へ差し戻しメールを送信（email が null でも member_id でAPI側がフォールバック）
+      fetch("/api/notify-returned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: selectedReport.member_id,
+          memberEmail: viewingMember?.email ?? null,
+          memberName: selectedReport.member_name,
+          month: selectedReport.month,
+          project: selectedReport.project,
+          reason: reason || null,
+          reportUrl: `${window.location.origin}?report_id=${selectedReport.id}`,
+        }),
+      });
     }
   };
 

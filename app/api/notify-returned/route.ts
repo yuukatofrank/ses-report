@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -10,10 +11,34 @@ function formatMonth(month: string): string {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { memberEmail, memberName, month, project, reason, reportUrl } = body;
+  const { memberId, memberEmail: rawEmail, memberName, month, project, reason, reportUrl } = body;
 
-  if (!memberEmail || !memberName || !month) {
+  if (!memberName || !month) {
     return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
+  }
+
+  // メールアドレスが渡されていない場合、DBから取得する
+  let memberEmail = rawEmail;
+  if (!memberEmail && memberId) {
+    const supabaseAdmin = createSupabaseAdminClient();
+    // members テーブルから email を取得
+    const { data: memberData } = await supabaseAdmin
+      .from("members")
+      .select("email, user_id")
+      .eq("id", memberId)
+      .single();
+
+    if (memberData?.email) {
+      memberEmail = memberData.email;
+    } else if (memberData?.user_id) {
+      // members.email が null の場合は auth.users から取得
+      const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(memberData.user_id);
+      memberEmail = user?.email ?? null;
+    }
+  }
+
+  if (!memberEmail) {
+    return NextResponse.json({ error: "送信先メールアドレスが取得できませんでした" }, { status: 400 });
   }
 
   const monthLabel = formatMonth(month);
