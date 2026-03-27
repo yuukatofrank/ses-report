@@ -315,8 +315,8 @@ function HomeContent() {
         {viewMode === "view" && selectedReport && (
           <ReportViewer
             report={selectedReport}
-            onEdit={isOwnReport ? handleEditReport : undefined}
-            onSubmit={isOwnReport ? handleSubmitReport : undefined}
+            onEdit={isOwnReport && selectedReport?.status !== "reviewed" ? handleEditReport : undefined}
+            onSubmit={isOwnReport && selectedReport?.status !== "reviewed" ? handleSubmitReport : undefined}
             onReview={member?.permission === "admin" ? handleReviewReport : undefined}
             isAdmin={member?.permission === "admin"}
           />
