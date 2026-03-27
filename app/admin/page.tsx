@@ -158,8 +158,8 @@ export default function AdminPage() {
     );
   }
 
-  const activeUsers = users.filter((u) => u.confirmed && u.member_id);
-  const invitedUsers = users.filter((u) => !u.confirmed);
+  const activeUsers = users.filter((u) => u.member_id);
+  const invitedUsers = users.filter((u) => !u.member_id);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f7f7f5" }}>
