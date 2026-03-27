@@ -15,6 +15,8 @@ export default function AuthPage() {
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const urlError = searchParams?.get("error");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +76,13 @@ export default function AuthPage() {
             {mode === "login" ? "アカウントにログイン" : "新規アカウント作成"}
           </p>
         </div>
+
+        {/* デバッグ: URLエラー表示 */}
+        {urlError && (
+          <div className="mb-4 bg-red-50 text-red-600 text-xs rounded-lg px-3 py-2 break-all">
+            callback error: {urlError}
+          </div>
+        )}
 
         {/* フォーム */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">

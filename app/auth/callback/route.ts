@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return response;
     }
+    return NextResponse.redirect(`${origin}/auth?error=${encodeURIComponent(error.message)}`);
   }
 
-  return NextResponse.redirect(`${origin}/auth?error=confirmation_failed`);
+  return NextResponse.redirect(`${origin}/auth?error=no_code`);
 }
