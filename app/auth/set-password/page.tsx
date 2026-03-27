@@ -71,7 +71,7 @@ function SetPasswordForm() {
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      setMessage({ type: "error", text: "パスワードの設定に失敗しました。招待リンクが無効か期限切れの可能性があります。" });
+      setMessage({ type: "error", text: `エラー: ${error.message}` });
     } else {
       setMessage({ type: "success", text: "パスワードを設定しました。月次報告システムへ移動します..." });
       setTimeout(() => router.push("/"), 2000);
