@@ -60,10 +60,14 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdm
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ report }),
       });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json();
+      if (res.ok && data.issues) {
         setInsight(data);
+      } else {
+        setInsight({ issues: [`エラー: ${data.error || res.status}`], improvements: [], growth: [] });
       }
+    } catch (e) {
+      setInsight({ issues: ["分析中にエラーが発生しました"], improvements: [], growth: [] });
     } finally {
       setInsightLoading(false);
     }

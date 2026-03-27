@@ -41,9 +41,11 @@ export async function POST(request: Request) {
   const text = textBlock && textBlock.type === "text" ? textBlock.text : "{}";
 
   try {
-    const result = JSON.parse(text);
+    // コードブロック（```json ... ```）が含まれる場合は除去
+    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const result = JSON.parse(cleaned);
     return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: "分析結果の解析に失敗しました" }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: `分析結果の解析に失敗しました: ${text.slice(0, 100)}` }, { status: 500 });
   }
 }
