@@ -329,7 +329,6 @@ function HomeContent() {
                   className="input-field"
                   placeholder="山田 太郎"
                   autoFocus
-                  onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
                 />
               </div>
               <div>
@@ -340,7 +339,6 @@ function HomeContent() {
                   onChange={(e) => setProfileRole(e.target.value)}
                   className="input-field"
                   placeholder="フロントエンドエンジニア"
-                  onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
                 />
               </div>
             </div>
