@@ -7,6 +7,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase";
 interface ReportViewerProps {
   report: Report;
   onEdit?: () => void;
+  onSubmit?: () => Promise<void>;
   onReview?: () => Promise<void>;
   isAdmin?: boolean;
 }
@@ -36,7 +37,7 @@ function Section({
   );
 }
 
-export default function ReportViewer({ report, onEdit, onReview, isAdmin }: ReportViewerProps) {
+export default function ReportViewer({ report, onEdit, onSubmit, onReview, isAdmin }: ReportViewerProps) {
   const isSubmitted = report.status === "submitted";
   const isReviewed = report.status === "reviewed";
   const [reviewing, setReviewing] = useState(false);
@@ -65,6 +66,23 @@ export default function ReportViewer({ report, onEdit, onReview, isAdmin }: Repo
       }
     } finally {
       setInsightLoading(false);
+    }
+  };
+
+  // 提出処理
+  const [submitting, setSubmitting] = useState(false);
+  const handleSubmit = async () => {
+    if (!onSubmit) return;
+    setSubmitting(true);
+    try {
+      await onSubmit();
+      // 提出後にメール送信モーダルを開く
+      setSent(false);
+      setSendError("");
+      setEmails(defaultEmail ? [defaultEmail] : [""]);
+      setShowNotifyModal(true);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -257,7 +275,19 @@ export default function ReportViewer({ report, onEdit, onReview, isAdmin }: Repo
               </button>
             )}
 
-            {/* 報告するボタン（提出済みのみ） */}
+            {/* 提出するボタン（下書きのみ） */}
+            {report.status === "draft" && onSubmit && (
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5
+                           rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {submitting ? "処理中..." : "📤 提出する"}
+              </button>
+            )}
+
+            {/* 再送信ボタン（提出済みのみ） */}
             {isSubmitted && (
               <button
                 onClick={() => {
@@ -281,12 +311,6 @@ export default function ReportViewer({ report, onEdit, onReview, isAdmin }: Repo
           </div>
         </div>
 
-        {/* 下書きの場合の注意 */}
-        {report.status === "draft" && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 mb-5 text-sm text-yellow-700">
-            ⚠️ 下書き状態です。「提出する」にしてから上司へ報告できます。
-          </div>
-        )}
 
         {/* AI サマリー */}
         {report.ai_summary && (

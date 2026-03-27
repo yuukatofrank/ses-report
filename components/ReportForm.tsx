@@ -243,11 +243,11 @@ export default function ReportForm({
               下書き保存
             </button>
             <button
-              onClick={() => handleSave("submitted")}
+              onClick={() => handleSave("draft")}
               disabled={saving}
               className="btn-primary"
             >
-              {saving ? "提出中..." : "提出する"}
+              {saving ? "保存中..." : "記入完了"}
             </button>
           </div>
         </div>

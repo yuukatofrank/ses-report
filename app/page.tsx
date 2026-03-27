@@ -202,6 +202,20 @@ function HomeContent() {
     setViewMode("form-edit");
   };
 
+  const handleSubmitReport = async () => {
+    if (!selectedReport) return;
+    const res = await fetch(`/api/reports/${selectedReport.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...selectedReport, status: "submitted" }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setSelectedReport(updated);
+      if (viewingMember) await fetchReports(viewingMember.id);
+    }
+  };
+
   const handleReviewReport = async () => {
     if (!selectedReport) return;
     const res = await fetch(`/api/reports/${selectedReport.id}`, {
@@ -300,6 +314,7 @@ function HomeContent() {
           <ReportViewer
             report={selectedReport}
             onEdit={isViewingOwn ? handleEditReport : undefined}
+            onSubmit={isViewingOwn ? handleSubmitReport : undefined}
             onReview={member?.permission === "admin" ? handleReviewReport : undefined}
             isAdmin={member?.permission === "admin"}
           />
