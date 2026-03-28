@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       <div class="btn-wrap">
         <a href="${inviteUrl}" class="btn">アカウントを設定する</a>
       </div>
-      <p class="note">このリンクは有効期限があります。心当たりがない場合は無視してください。</p>
+      <p class="note">このリンクの有効期限は1時間です。期限が切れた場合は管理者に再送をご依頼ください。<br>心当たりがない場合は無視してください。</p>
     </div>
     <div class="footer">
       このメールはfrankSQUARE月次報告システムから自動送信されました
