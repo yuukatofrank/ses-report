@@ -35,6 +35,12 @@ export async function POST(request: Request) {
 
   const inviteUrl = linkData.properties?.action_link;
 
+  // 有効期限（24時間後）をJST で計算
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const jst = new Date(expiresAt.getTime() + 9 * 60 * 60 * 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const expiryLabel = `${jst.getUTCFullYear()}/${pad(jst.getUTCMonth() + 1)}/${pad(jst.getUTCDate())} ${pad(jst.getUTCHours())}:${pad(jst.getUTCMinutes())}`;
+
   // Resendでメール送信
   const html = `
 <!DOCTYPE html>
@@ -66,7 +72,7 @@ export async function POST(request: Request) {
       <div class="btn-wrap">
         <a href="${inviteUrl}" class="btn">アカウントを設定する</a>
       </div>
-      <p class="note">このリンクの有効期限は1時間です。期限が切れた場合は管理者に再送をご依頼ください。<br>心当たりがない場合は無視してください。</p>
+      <p class="note">このリンクの有効期限は <strong>${expiryLabel}</strong> までです。期限が切れた場合は管理者に再送をご依頼ください。<br>心当たりがない場合は無視してください。</p>
     </div>
     <div class="footer">
       このメールはfrankSQUARE月次報告システムから自動送信されました
