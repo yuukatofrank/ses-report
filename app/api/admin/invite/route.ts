@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   const { email, redirectTo } = await request.json();
@@ -17,13 +20,72 @@ export async function POST(request: Request) {
     await supabaseAdmin.auth.admin.deleteUser(existing.id);
   }
 
-  const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${redirectTo}/auth/set-password`,
+  // 招待リンクを生成
+  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: {
+      redirectTo: `${redirectTo}/auth/set-password`,
+    },
   });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (linkError || !linkData) {
+    return NextResponse.json({ error: linkError?.message ?? "招待リンクの生成に失敗しました" }, { status: 500 });
   }
 
-  return NextResponse.json({ user: data.user });
+  const inviteUrl = linkData.properties?.action_link;
+
+  // Resendでメール送信
+  const html = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Hiragino Kaku Gothic Pro', 'Yu Gothic', Meiryo, sans-serif; color: #333; margin: 0; padding: 0; background: #f7f7f5; }
+    .wrapper { max-width: 600px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .header { background: #1a1a2e; color: #fff; padding: 24px 32px; }
+    .header h1 { margin: 0; font-size: 16px; font-weight: bold; opacity: 0.8; }
+    .header h2 { margin: 8px 0 0; font-size: 22px; font-weight: bold; }
+    .body { padding: 32px; }
+    .body p { font-size: 15px; line-height: 1.8; color: #444; }
+    .btn-wrap { text-align: center; margin: 32px 0; }
+    .btn { display: inline-block; background: #0f6e56; color: #fff; font-size: 15px; font-weight: bold; padding: 14px 36px; border-radius: 8px; text-decoration: none; }
+    .note { font-size: 12px; color: #999; margin-top: 24px; }
+    .footer { background: #f7f7f5; padding: 16px 32px; font-size: 12px; color: #999; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>frankSQUARE</h1>
+      <h2>月次報告システムへご招待</h2>
+    </div>
+    <div class="body">
+      <p>frankSQUARE月次報告システムへの招待メールをお送りしました。<br>下のボタンからアカウントを設定してご利用ください。</p>
+      <div class="btn-wrap">
+        <a href="${inviteUrl}" class="btn">アカウントを設定する</a>
+      </div>
+      <p class="note">このリンクは有効期限があります。心当たりがない場合は無視してください。</p>
+    </div>
+    <div class="footer">
+      このメールはfrankSQUARE月次報告システムから自動送信されました
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  const { error: mailError } = await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL || "noreply@franksquare.co.jp",
+    to: email,
+    subject: "【frankSQUARE】月次報告システムへのご招待",
+    html,
+  });
+
+  if (mailError) {
+    return NextResponse.json({ error: mailError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
 }
