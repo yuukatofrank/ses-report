@@ -5,7 +5,8 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
-  const { email, redirectTo } = await request.json();
+  const { email, redirectTo: clientRedirectTo } = await request.json();
+  const redirectTo = process.env.APP_URL || clientRedirectTo;
 
   if (!email) {
     return NextResponse.json({ error: "メールアドレスは必須です" }, { status: 400 });
