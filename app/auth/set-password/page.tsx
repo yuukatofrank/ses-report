@@ -16,38 +16,47 @@ function SetPasswordForm() {
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
-    // Supabaseはimplicit flow（ハッシュ）でリダイレクトするのでハッシュからトークンを取得
-    const hash = window.location.hash;
-    if (hash) {
-      const params = new URLSearchParams(hash.substring(1));
-      const accessToken = params.get("access_token");
-      const refreshToken = params.get("refresh_token");
-
-      if (accessToken && refreshToken) {
-        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-          .then(({ data, error }) => {
-            if (!error && data.session?.user?.email) {
-              setEmail(data.session.user.email);
-              setInitializing(false);
-              // ハッシュをURLから除去
-              window.history.replaceState(null, "", window.location.pathname);
-            } else {
-              router.push("/auth?error=invalid_invite");
-            }
-          });
-        return;
+    const init = async () => {
+      // 1. PKCE flow: URLに?codeがある場合
+      const code = searchParams.get("code");
+      if (code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error && data.session?.user?.email) {
+          setEmail(data.session.user.email);
+          setInitializing(false);
+          window.history.replaceState(null, "", window.location.pathname);
+          return;
+        }
       }
-    }
 
-    // ハッシュなし: 既存セッションを確認
-    supabase.auth.getSession().then(({ data }) => {
+      // 2. Implicit flow: ハッシュにトークンがある場合
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          const { data, error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          if (!error && data.session?.user?.email) {
+            setEmail(data.session.user.email);
+            setInitializing(false);
+            window.history.replaceState(null, "", window.location.pathname);
+            return;
+          }
+        }
+      }
+
+      // 3. 既存セッションを確認
+      const { data } = await supabase.auth.getSession();
       if (data.session?.user?.email) {
         setEmail(data.session.user.email);
         setInitializing(false);
       } else {
         router.push("/auth?error=invalid_invite");
       }
-    });
+    };
+    init();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
