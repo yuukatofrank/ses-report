@@ -62,7 +62,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail.trim(), redirectTo: window.location.origin }),
+        body: JSON.stringify({ email: inviteEmail.trim(), redirectTo: process.env.NEXT_PUBLIC_APP_URL || window.location.origin }),
       });
       if (res.ok) {
         setInviteResult({ type: "success", text: `${inviteEmail} に招待メールを送信しました` });
@@ -83,7 +83,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, redirectTo: window.location.origin }),
+        body: JSON.stringify({ email, redirectTo: process.env.NEXT_PUBLIC_APP_URL || window.location.origin }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -100,14 +100,13 @@ export default function AdminPage() {
     setDeleting(user.auth_id);
     try {
       if (user.member_id) {
-        // membersテーブルから削除（cascadeでauth.usersも消える想定）
+        // membersテーブルを削除してから auth.users も削除
         const res = await fetch(`/api/members/${user.member_id}`, { method: "DELETE" });
         if (!res.ok) { alert("削除に失敗しました"); return; }
-      } else {
-        // 招待中ユーザー（membersに未登録）→ auth.usersから直接削除
-        const res = await fetch(`/api/admin/users/${user.auth_id}`, { method: "DELETE" });
-        if (!res.ok) { alert("削除に失敗しました"); return; }
       }
+      // auth.users から削除（招待中ユーザーも登録済みユーザーも共通）
+      const authRes = await fetch(`/api/admin/users/${user.auth_id}`, { method: "DELETE" });
+      if (!authRes.ok) { alert("認証ユーザーの削除に失敗しました"); return; }
       await fetchUsers();
     } finally {
       setDeleting(null);
