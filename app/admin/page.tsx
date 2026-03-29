@@ -106,7 +106,11 @@ export default function AdminPage() {
       }
       // auth.users から削除（招待中ユーザーも登録済みユーザーも共通）
       const authRes = await fetch(`/api/admin/users/${user.auth_id}`, { method: "DELETE" });
-      if (!authRes.ok) { alert("認証ユーザーの削除に失敗しました"); return; }
+      if (!authRes.ok) {
+        const err = await authRes.json().catch(() => ({}));
+        alert(`認証ユーザーの削除に失敗しました: ${err.error || authRes.status}`);
+        return;
+      }
       await fetchUsers();
     } finally {
       setDeleting(null);
