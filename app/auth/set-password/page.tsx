@@ -17,7 +17,23 @@ function SetPasswordForm() {
 
   useEffect(() => {
     const init = async () => {
-      // 1. PKCE flow: URLに?codeがある場合
+      // 1. token_hash方式: 招待メールからのアクセス
+      const tokenHash = searchParams.get("token_hash");
+      const type = searchParams.get("type");
+      if (tokenHash && type) {
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: type as "invite" | "email",
+        });
+        if (!error && data.session?.user?.email) {
+          setEmail(data.session.user.email);
+          setInitializing(false);
+          window.history.replaceState(null, "", window.location.pathname);
+          return;
+        }
+      }
+
+      // 2. PKCE flow: ?codeがある場合
       const code = searchParams.get("code");
       if (code) {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -29,7 +45,7 @@ function SetPasswordForm() {
         }
       }
 
-      // 2. Implicit flow: ハッシュにトークンがある場合
+      // 3. Implicit flow: ハッシュにトークンがある場合
       const hash = window.location.hash;
       if (hash) {
         const params = new URLSearchParams(hash.substring(1));
@@ -47,7 +63,7 @@ function SetPasswordForm() {
         }
       }
 
-      // 3. 既存セッションを確認
+      // 4. 既存セッションを確認
       const { data } = await supabase.auth.getSession();
       if (data.session?.user?.email) {
         setEmail(data.session.user.email);

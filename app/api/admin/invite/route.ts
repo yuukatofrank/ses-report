@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   const { email, redirectTo: clientRedirectTo } = await request.json();
-  const redirectTo = process.env.APP_URL || clientRedirectTo;
+  const appUrl = process.env.APP_URL || clientRedirectTo;
 
   if (!email) {
     return NextResponse.json({ error: "メールアドレスは必須です" }, { status: 400 });
@@ -25,21 +25,15 @@ export async function POST(request: Request) {
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: "invite",
     email,
-    options: {
-      redirectTo: `${redirectTo}/auth/set-password`,
-    },
   });
 
   if (linkError || !linkData) {
     return NextResponse.json({ error: linkError?.message ?? "招待リンクの生成に失敗しました" }, { status: 500 });
   }
 
-  let inviteUrl = linkData.properties?.action_link ?? "";
-  // action_link内のURLをカスタムドメインに置換
-  const appUrl = process.env.APP_URL;
-  if (appUrl && inviteUrl) {
-    inviteUrl = inviteUrl.replace(/redirect_to=[^&]*/, `redirect_to=${encodeURIComponent(`${appUrl}/auth/set-password`)}`);
-  }
+  // token_hashを使って自前のURLを構築（action_linkはPKCE問題があるため使わない）
+  const tokenHash = linkData.properties?.hashed_token;
+  const inviteUrl = `${appUrl}/auth/set-password?token_hash=${encodeURIComponent(tokenHash)}&type=invite`;
 
   // 有効期限（24時間後）をJST で計算
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
