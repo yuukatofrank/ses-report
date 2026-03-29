@@ -34,7 +34,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: linkError?.message ?? "招待リンクの生成に失敗しました" }, { status: 500 });
   }
 
-  const inviteUrl = linkData.properties?.action_link;
+  let inviteUrl = linkData.properties?.action_link ?? "";
+  // action_link内のURLをカスタムドメインに置換
+  const appUrl = process.env.APP_URL;
+  if (appUrl && inviteUrl) {
+    inviteUrl = inviteUrl.replace(/redirect_to=[^&]*/, `redirect_to=${encodeURIComponent(`${appUrl}/auth/set-password`)}`);
+  }
 
   // 有効期限（24時間後）をJST で計算
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
