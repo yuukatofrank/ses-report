@@ -11,6 +11,7 @@ interface ReportViewerProps {
   onReview?: () => Promise<void>;
   onReturn?: (reason?: string) => Promise<void>;
   isAdmin?: boolean;
+  isSuperAdmin?: boolean; // 最高権限ユーザー（NEXT_PUBLIC_ADMIN_EMAIL）のみtrue
   canEditOrSubmit?: boolean; // 報告書の作成者本人かつ非管理者のみtrue
 }
 
@@ -39,7 +40,7 @@ function Section({
   );
 }
 
-export default function ReportViewer({ report, onEdit, onSubmit, onReview, onReturn, isAdmin, canEditOrSubmit }: ReportViewerProps) {
+export default function ReportViewer({ report, onEdit, onSubmit, onReview, onReturn, isAdmin, isSuperAdmin, canEditOrSubmit }: ReportViewerProps) {
   const isSubmitted = report.status === "submitted";
   const isReviewed = report.status === "reviewed";
   const isReturned = report.status === "returned";
@@ -367,14 +368,14 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
           更新: {new Date(report.updated_at).toLocaleDateString("ja-JP")}
         </p>
 
-        {/* AI 過去比較分析（管理者 or 差し戻し時は報告者も閲覧可） */}
-        {(isAdmin || analysis) && (isAdmin || isReturned || !!analysis) && (
+        {/* AI 過去比較分析（最高権限ユーザー or 差し戻し時は報告者も閲覧可） */}
+        {(isSuperAdmin || analysis) && (isSuperAdmin || isReturned || !!analysis) && (
           <div className="mt-5 card p-5 border-l-4 border-l-purple-400">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
-                🔍 {isAdmin ? "AI過去比較分析" : "過去比較分析"}
+                🔍 {isSuperAdmin ? "AI過去比較分析" : "過去比較分析"}
               </p>
-              {isAdmin && (
+              {isSuperAdmin && (
                 <button
                   onClick={runAnalysis}
                   disabled={analysisLoading}
@@ -411,14 +412,14 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
           </div>
         )}
 
-        {/* AIレポート分析（管理者 or 差し戻し時は報告者も閲覧可） */}
-        {(isAdmin || insight) && (isAdmin || isReturned || !!insight) && (
+        {/* AIレポート分析（最高権限ユーザー or 差し戻し時は報告者も閲覧可） */}
+        {(isSuperAdmin || insight) && (isSuperAdmin || isReturned || !!insight) && (
           <div className="mt-5 card p-5 border-l-4 border-l-amber-400">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">
-                🧠 {isAdmin ? "AIレポート分析" : "レポート分析"}
+                🧠 {isSuperAdmin ? "AIレポート分析" : "レポート分析"}
               </p>
-              {isAdmin && (
+              {isSuperAdmin && (
                 <button
                   onClick={runInsight}
                   disabled={insightLoading}

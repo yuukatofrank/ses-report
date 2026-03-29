@@ -27,6 +27,12 @@ function HomeContent() {
   // 管理者用
   const [allMembers, setAllMembers] = useState<Member[]>([]);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
+  const [viewTab, setViewTab] = useState<"member" | "month">("member");
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [monthReports, setMonthReports] = useState<Report[]>([]);
 
   // プロフィールモーダル
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -108,6 +114,21 @@ function HomeContent() {
     };
     init();
   }, [userId, fetchProfile, fetchReports]);
+
+  const fetchMonthReports = async (month: string) => {
+    const res = await fetch(`/api/reports?month=${month}`);
+    if (res.ok) setMonthReports(await res.json());
+  };
+
+  const handleChangeViewTab = async (tab: "member" | "month") => {
+    setViewTab(tab);
+    if (tab === "month") await fetchMonthReports(selectedMonth);
+  };
+
+  const handleChangeMonth = async (month: string) => {
+    setSelectedMonth(month);
+    await fetchMonthReports(month);
+  };
 
   // 管理者がメンバーを切り替えたとき
   const handleChangeMember = async (target: Member) => {
@@ -327,6 +348,11 @@ function HomeContent() {
         allMembers={member?.permission === "admin" ? allMembers : undefined}
         viewingMember={viewingMember}
         onChangeMember={handleChangeMember}
+        viewTab={viewTab}
+        onChangeViewTab={member?.permission === "admin" ? handleChangeViewTab : undefined}
+        selectedMonth={selectedMonth}
+        onChangeMonth={handleChangeMonth}
+        monthReports={monthReports}
       />
 
       {/* メインエリア */}
@@ -376,6 +402,7 @@ function HomeContent() {
             onReturn={member?.permission === "admin" ? handleReturnReport : undefined}
             onReview={member?.permission === "admin" ? handleReviewReport : undefined}
             isAdmin={member?.permission === "admin"}
+            isSuperAdmin={userEmail === process.env.NEXT_PUBLIC_ADMIN_EMAIL}
             canEditOrSubmit={canEditOrSubmit}
           />
         )}
