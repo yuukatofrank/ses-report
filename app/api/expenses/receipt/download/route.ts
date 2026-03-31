@@ -32,10 +32,12 @@ export async function GET(request: Request) {
     const filename = customName ? customName + ext : storageName;
     const buffer = Buffer.from(await data.arrayBuffer());
 
+    // RFC 5987: filename* for UTF-8 support (Safari/Chrome/Firefox)
+    const encodedFilename = encodeURIComponent(filename).replace(/['()]/g, escape);
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": data.type || "application/octet-stream",
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
+        "Content-Disposition": `attachment; filename="receipt${ext}"; filename*=UTF-8''${encodedFilename}`,
       },
     });
   }
