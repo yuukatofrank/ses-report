@@ -174,7 +174,7 @@ export default function ExpenseViewer({
                       {item.receipt_path ? (
                         <span className="flex items-center justify-center gap-2">
                           <a
-                            href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}`}
+                            href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}&filename=${encodeURIComponent(`${item.date}_${item.title}`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-[#0f6e56] hover:underline"
@@ -182,7 +182,7 @@ export default function ExpenseViewer({
                             表示
                           </a>
                           <a
-                            href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}&mode=download`}
+                            href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}&mode=download&filename=${encodeURIComponent(`${item.date}_${item.title}`)}`}
                             className="text-xs text-gray-400 hover:text-gray-600 hover:underline"
                           >
                             DL

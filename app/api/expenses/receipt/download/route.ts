@@ -25,7 +25,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error?.message ?? "ファイルが見つかりません" }, { status: 500 });
     }
 
-    const filename = path.split("/").pop() ?? "receipt";
+    // Use custom filename from query param, or fallback to storage filename
+    const customName = searchParams.get("filename");
+    const storageName = path.split("/").pop() ?? "receipt";
+    const ext = storageName.includes(".") ? "." + storageName.split(".").pop() : "";
+    const filename = customName ? customName + ext : storageName;
     const buffer = Buffer.from(await data.arrayBuffer());
 
     return new NextResponse(buffer, {
@@ -37,9 +41,15 @@ export async function GET(request: Request) {
   }
 
   // Default: redirect to signed URL (inline view)
+  const downloadName = searchParams.get("filename");
+  let download: string | undefined;
+  if (downloadName) {
+    const sExt = path.includes(".") ? "." + path.split(".").pop() : "";
+    download = downloadName + sExt;
+  }
   const { data: urlData, error } = await supabaseAdmin.storage
     .from("receipts")
-    .createSignedUrl(path, 60);
+    .createSignedUrl(path, 60, download ? { download } : undefined);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
