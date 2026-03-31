@@ -7,61 +7,115 @@ export async function GET(request: Request) {
   const month = searchParams.get("month");
 
   let query = supabase
-    .from("expenses")
+    .from("expense_reports")
     .select("*")
-    .order("date", { ascending: false });
+    .order("month", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (memberId) query = query.eq("member_id", memberId);
   if (month) query = query.eq("month", month);
 
-  const { data, error } = await query;
+  const { data: reports, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json(data);
+
+  if (!reports || reports.length === 0) {
+    return NextResponse.json([]);
+  }
+
+  // Fetch items for all reports
+  const reportIds = reports.map((r) => r.id);
+  const { data: items, error: itemsError } = await supabase
+    .from("expense_items")
+    .select("*")
+    .in("report_id", reportIds)
+    .order("sort_order", { ascending: true });
+
+  if (itemsError) {
+    return NextResponse.json({ error: itemsError.message }, { status: 500 });
+  }
+
+  // Group items by report_id
+  const itemsByReport = (items || []).reduce(
+    (acc: Record<string, typeof items>, item) => {
+      if (!acc[item.report_id]) acc[item.report_id] = [];
+      acc[item.report_id].push(item);
+      return acc;
+    },
+    {}
+  );
+
+  const reportsWithItems = reports.map((report) => ({
+    ...report,
+    items: itemsByReport[report.id] || [],
+  }));
+
+  return NextResponse.json(reportsWithItems);
 }
 
 export async function POST(request: Request) {
   const body = await request.json();
 
-  if (
-    !body.member_id ||
-    !body.member_name ||
-    !body.month ||
-    !body.title ||
-    !body.category ||
-    !body.amount ||
-    !body.date
-  ) {
+  if (!body.member_id || !body.member_name || !body.month) {
     return NextResponse.json(
-      {
-        error:
-          "member_id, member_name, month, title, category, amount, date は必須です",
-      },
+      { error: "member_id, member_name, month は必須です" },
       { status: 400 }
     );
   }
 
-  const { data, error } = await supabase
-    .from("expenses")
+  // Insert expense_report
+  const { data: report, error: reportError } = await supabase
+    .from("expense_reports")
     .insert({
       member_id: body.member_id,
       member_name: body.member_name,
       month: body.month,
-      title: body.title,
-      category: body.category,
-      amount: body.amount,
-      date: body.date,
-      description: body.description || null,
-      receipt_path: body.receipt_path || null,
       status: body.status || "draft",
     })
     .select()
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (reportError) {
+    return NextResponse.json(
+      { error: reportError.message },
+      { status: 500 }
+    );
   }
-  return NextResponse.json(data, { status: 201 });
+
+  // Insert expense_items if provided
+  let items: Record<string, unknown>[] = [];
+  if (body.items && body.items.length > 0) {
+    const itemsToInsert = body.items.map(
+      (item: Record<string, unknown>, index: number) => ({
+        report_id: report.id,
+        title: item.title,
+        category: item.category,
+        amount: item.amount,
+        date: item.date,
+        description: item.description || null,
+        receipt_path: item.receipt_path || null,
+        sort_order: item.sort_order ?? index,
+      })
+    );
+
+    const { data: insertedItems, error: itemsError } = await supabase
+      .from("expense_items")
+      .insert(itemsToInsert)
+      .select();
+
+    if (itemsError) {
+      // Clean up the report if items insertion fails
+      await supabase.from("expense_reports").delete().eq("id", report.id);
+      return NextResponse.json(
+        { error: itemsError.message },
+        { status: 500 }
+      );
+    }
+
+    items = insertedItems || [];
+  }
+
+  return NextResponse.json({ ...report, items }, { status: 201 });
 }

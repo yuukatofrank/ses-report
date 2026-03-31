@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { Expense, Member } from "@/types";
+import { ExpenseReport, ExpenseItem, Member } from "@/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import ExpenseList from "@/components/expense/ExpenseList";
 import ExpenseForm from "@/components/expense/ExpenseForm";
@@ -36,8 +36,8 @@ function ExpensesContent() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [member, setMember] = useState<Member | null>(null);
   const [allMembers, setAllMembers] = useState<Member[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [reports, setReports] = useState<ExpenseReport[]>([]);
+  const [selectedReport, setSelectedReport] = useState<ExpenseReport | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
 
   // Filters
@@ -68,16 +68,23 @@ function ExpensesContent() {
     return null;
   }, []);
 
-  const fetchExpenses = useCallback(
+  const fetchReports = useCallback(
     async (memberId?: string, month?: string) => {
       const params = new URLSearchParams();
       if (memberId && memberId !== "all") params.set("member_id", memberId);
       if (month) params.set("month", month);
       const res = await fetch(`/api/expenses?${params.toString()}`);
-      if (res.ok) setExpenses(await res.json());
+      if (res.ok) setReports(await res.json());
     },
     []
   );
+
+  // Fetch a single report with items (for viewing/editing)
+  const fetchReportDetail = useCallback(async (reportId: string): Promise<ExpenseReport | null> => {
+    const res = await fetch(`/api/expenses/${reportId}`);
+    if (res.ok) return await res.json();
+    return null;
+  }, []);
 
   // Init
   useEffect(() => {
@@ -93,18 +100,15 @@ function ExpensesContent() {
       const isSA = userEmail === adminEmail;
 
       if (isSA) {
-        // Super admin: fetch all members for filter
         const res = await fetch("/api/members");
         if (res.ok) {
           const members: Member[] = await res.json();
           setAllMembers(members);
         }
-        // Fetch all expenses for current month
-        await fetchExpenses("all", selectedMonth);
+        await fetchReports("all", selectedMonth);
       } else {
-        // Regular user: fetch only own expenses
         setFilterMemberId(profile.id);
-        await fetchExpenses(profile.id, selectedMonth);
+        await fetchReports(profile.id, selectedMonth);
       }
 
       setLoading(false);
@@ -116,32 +120,35 @@ function ExpensesContent() {
   // Re-fetch on filter change
   const handleMonthChange = async (month: string) => {
     setSelectedMonth(month);
-    setSelectedExpense(null);
+    setSelectedReport(null);
     setViewMode("idle");
     const mid = isSuperAdmin ? filterMemberId : member?.id;
-    await fetchExpenses(mid, month);
+    await fetchReports(mid, month);
   };
 
   const handleMemberFilterChange = async (memberId: string) => {
     setFilterMemberId(memberId);
-    setSelectedExpense(null);
+    setSelectedReport(null);
     setViewMode("idle");
-    await fetchExpenses(memberId, selectedMonth);
+    await fetchReports(memberId, selectedMonth);
   };
 
-  // CRUD handlers
-  const handleSelectExpense = (expense: Expense) => {
-    setSelectedExpense(expense);
-    setViewMode("view");
+  // Select a report -> fetch detail with items
+  const handleSelectReport = async (report: ExpenseReport) => {
+    const detail = await fetchReportDetail(report.id);
+    if (detail) {
+      setSelectedReport(detail);
+      setViewMode("view");
+    }
   };
 
-  const handleNewExpense = () => {
-    setSelectedExpense(null);
+  const handleNewReport = () => {
+    setSelectedReport(null);
     setViewMode("form-new");
   };
 
-  const handleSaveExpense = async (
-    data: Partial<Expense>,
+  const handleSaveReport = async (
+    data: { month: string; items: ExpenseItem[] },
     status: "draft" | "submitted"
   ) => {
     if (viewMode === "form-new" && member) {
@@ -149,93 +156,102 @@ function ExpensesContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...data,
           member_id: member.id,
           member_name: member.name,
-          month: selectedMonth,
+          month: data.month,
           status,
+          items: data.items,
         }),
       });
       if (res.ok) {
         const saved = await res.json();
         const mid = isSuperAdmin ? filterMemberId : member.id;
-        await fetchExpenses(mid, selectedMonth);
-        setSelectedExpense(saved);
-        setViewMode("view");
+        await fetchReports(mid, selectedMonth);
+        const detail = await fetchReportDetail(saved.id);
+        if (detail) {
+          setSelectedReport(detail);
+          setViewMode("view");
+        }
       } else {
         const err = await res.json();
         alert(err.error || "保存に失敗しました");
       }
-    } else if (viewMode === "form-edit" && selectedExpense) {
-      const res = await fetch(`/api/expenses/${selectedExpense.id}`, {
+    } else if (viewMode === "form-edit" && selectedReport) {
+      const res = await fetch(`/api/expenses/${selectedReport.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, status }),
+        body: JSON.stringify({
+          month: data.month,
+          status,
+          items: data.items,
+        }),
       });
       if (res.ok) {
         const saved = await res.json();
         const mid = isSuperAdmin ? filterMemberId : member?.id;
-        await fetchExpenses(mid, selectedMonth);
-        setSelectedExpense(saved);
-        setViewMode("view");
+        await fetchReports(mid, selectedMonth);
+        const detail = await fetchReportDetail(saved.id);
+        if (detail) {
+          setSelectedReport(detail);
+          setViewMode("view");
+        }
       } else {
         alert("更新に失敗しました");
       }
     }
   };
 
-  const handleEditExpense = () => {
+  const handleEditReport = () => {
     setViewMode("form-edit");
   };
 
-  const handleDeleteExpense = async () => {
-    if (!selectedExpense) return;
-    const res = await fetch(`/api/expenses/${selectedExpense.id}`, {
+  const handleDeleteReport = async () => {
+    if (!selectedReport) return;
+    const res = await fetch(`/api/expenses/${selectedReport.id}`, {
       method: "DELETE",
     });
     if (res.ok) {
       const mid = isSuperAdmin ? filterMemberId : member?.id;
-      await fetchExpenses(mid, selectedMonth);
-      setSelectedExpense(null);
+      await fetchReports(mid, selectedMonth);
+      setSelectedReport(null);
       setViewMode("idle");
     } else {
       alert("削除に失敗しました");
     }
   };
 
-  const handleApproveExpense = async () => {
-    if (!selectedExpense) return;
-    const res = await fetch(`/api/expenses/${selectedExpense.id}`, {
+  const handleApproveReport = async () => {
+    if (!selectedReport) return;
+    const res = await fetch(`/api/expenses/${selectedReport.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...selectedExpense, status: "approved" }),
+      body: JSON.stringify({ status: "approved" }),
     });
     if (res.ok) {
-      const saved = await res.json();
-      await fetchExpenses(filterMemberId, selectedMonth);
-      setSelectedExpense(saved);
+      await fetchReports(filterMemberId, selectedMonth);
+      const detail = await fetchReportDetail(selectedReport.id);
+      if (detail) setSelectedReport(detail);
     }
   };
 
-  const handleReturnExpense = async (comment: string) => {
-    if (!selectedExpense) return;
-    const res = await fetch(`/api/expenses/${selectedExpense.id}`, {
+  const handleReturnReport = async (comment: string) => {
+    if (!selectedReport) return;
+    const res = await fetch(`/api/expenses/${selectedReport.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...selectedExpense,
         status: "returned",
         admin_comment: comment || null,
       }),
     });
     if (res.ok) {
-      const saved = await res.json();
-      await fetchExpenses(filterMemberId, selectedMonth);
-      setSelectedExpense(saved);
+      await fetchReports(filterMemberId, selectedMonth);
+      const detail = await fetchReportDetail(selectedReport.id);
+      if (detail) setSelectedReport(detail);
     }
   };
 
-  // PDF download for admin
+  // PDF download
   const handlePrintPdf = () => {
     const mid =
       filterMemberId !== "all" ? filterMemberId : member?.id;
@@ -248,14 +264,14 @@ function ExpensesContent() {
   };
 
   // Permissions
-  const isOwnExpense = selectedExpense
-    ? selectedExpense.member_id === member?.id
+  const isOwnReport = selectedReport
+    ? selectedReport.member_id === member?.id
     : true;
   const canEdit =
-    isOwnExpense &&
+    isOwnReport &&
     !isSuperAdmin &&
-    (selectedExpense?.status === "draft" ||
-      selectedExpense?.status === "returned");
+    (selectedReport?.status === "draft" ||
+      selectedReport?.status === "returned");
 
   if (loading) {
     return (
@@ -344,10 +360,10 @@ function ExpensesContent() {
 
       {/* Sidebar */}
       <ExpenseList
-        expenses={expenses}
-        selectedExpense={selectedExpense}
-        onSelectExpense={handleSelectExpense}
-        onNewExpense={handleNewExpense}
+        reports={reports}
+        selectedReport={selectedReport}
+        onSelectReport={handleSelectReport}
+        onNewReport={handleNewReport}
       />
 
       {/* Main content */}
@@ -360,7 +376,7 @@ function ExpensesContent() {
             </p>
             {!isSuperAdmin && (
               <button
-                onClick={handleNewExpense}
+                onClick={handleNewReport}
                 className="mt-4 btn-primary text-sm"
               >
                 + 新規申請
@@ -373,31 +389,33 @@ function ExpensesContent() {
           <ExpenseForm
             memberId={member.id}
             memberName={member.name}
-            expense={
-              viewMode === "form-edit" ? selectedExpense ?? undefined : undefined
+            report={
+              viewMode === "form-edit" && selectedReport
+                ? selectedReport
+                : undefined
             }
-            onSave={handleSaveExpense}
+            onSave={handleSaveReport}
             onCancel={() =>
-              setViewMode(selectedExpense ? "view" : "idle")
+              setViewMode(selectedReport ? "view" : "idle")
             }
             onDelete={
-              viewMode === "form-edit" ? handleDeleteExpense : undefined
+              viewMode === "form-edit" ? handleDeleteReport : undefined
             }
           />
         )}
 
-        {viewMode === "view" && selectedExpense && (
+        {viewMode === "view" && selectedReport && (
           <ExpenseViewer
-            expense={selectedExpense}
-            onEdit={canEdit ? handleEditExpense : undefined}
+            report={selectedReport}
+            onEdit={canEdit ? handleEditReport : undefined}
             onApprove={
-              isSuperAdmin && selectedExpense.status === "submitted"
-                ? handleApproveExpense
+              isSuperAdmin && selectedReport.status === "submitted"
+                ? handleApproveReport
                 : undefined
             }
             onReturn={
-              isSuperAdmin && selectedExpense.status === "submitted"
-                ? handleReturnExpense
+              isSuperAdmin && selectedReport.status === "submitted"
+                ? handleReturnReport
                 : undefined
             }
             isSuperAdmin={isSuperAdmin}

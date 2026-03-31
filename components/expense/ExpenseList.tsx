@@ -1,19 +1,19 @@
 "use client";
 
-import { Expense, EXPENSE_CATEGORIES } from "@/types";
+import { ExpenseReport, EXPENSE_CATEGORIES } from "@/types";
 
 interface ExpenseListProps {
-  expenses: Expense[];
-  selectedExpense: Expense | null;
-  onSelectExpense: (expense: Expense) => void;
-  onNewExpense: () => void;
+  reports: ExpenseReport[];
+  selectedReport: ExpenseReport | null;
+  onSelectReport: (report: ExpenseReport) => void;
+  onNewReport: () => void;
 }
 
-function statusBadge(status: Expense["status"]) {
+function statusBadge(status: ExpenseReport["status"]) {
   const map = {
     draft: { bg: "bg-gray-200 text-gray-600", label: "下書き" },
     submitted: { bg: "bg-yellow-100 text-yellow-700", label: "申請中" },
-    approved: { bg: "bg-green-100 text-green-700", label: "承認済み" },
+    approved: { bg: "bg-green-100 text-green-700", label: "承認済" },
     returned: { bg: "bg-red-100 text-red-700", label: "差し戻し" },
   } as const;
   const { bg, label } = map[status];
@@ -24,61 +24,74 @@ function statusBadge(status: Expense["status"]) {
   );
 }
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+function fmtMonth(ym: string): string {
+  const [y, m] = ym.split("-");
+  return `${y}年${parseInt(m)}月`;
+}
+
+function totalAmount(report: ExpenseReport): number {
+  return (report.items ?? []).reduce((sum, item) => sum + item.amount, 0);
 }
 
 export default function ExpenseList({
-  expenses,
-  selectedExpense,
-  onSelectExpense,
-  onNewExpense,
+  reports,
+  selectedReport,
+  onSelectReport,
+  onNewReport,
 }: ExpenseListProps) {
-  const sorted = [...expenses].sort((a, b) => b.date.localeCompare(a.date));
+  const sorted = [...reports].sort(
+    (a, b) => b.updated_at.localeCompare(a.updated_at)
+  );
 
   return (
     <aside className="fixed top-[56px] left-0 bottom-0 w-[260px] bg-white border-r border-gray-200 flex-col z-30 hidden md:flex">
-      {/* New expense button */}
+      {/* New report button */}
       <div className="p-3 border-b border-gray-100">
-        <button onClick={onNewExpense} className="btn-primary w-full text-sm">
+        <button onClick={onNewReport} className="btn-primary w-full text-sm">
           + 新規申請
         </button>
       </div>
 
-      {/* Expense list */}
+      {/* Report list */}
       <div className="flex-1 overflow-y-auto">
-        {expenses.length === 0 ? (
+        {reports.length === 0 ? (
           <p className="text-xs text-gray-400 text-center mt-10 px-4">
             経費申請がまだありません
           </p>
         ) : (
           <ul className="py-1">
-            {sorted.map((expense) => (
-              <li key={expense.id}>
-                <button
-                  onClick={() => onSelectExpense(expense)}
-                  className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0
-                    ${selectedExpense?.id === expense.id ? "bg-[#f0faf7] border-l-2 border-l-[#0f6e56]" : ""}`}
-                >
-                  <div className="flex items-center justify-between gap-2 mb-0.5">
-                    <span className="text-xs text-gray-400">{formatDate(expense.date)}</span>
-                    {statusBadge(expense.status)}
-                  </div>
-                  <p className="text-sm font-medium text-gray-800 truncate">
-                    {expense.title}
-                  </p>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-[10px] text-gray-400">
-                      {EXPENSE_CATEGORIES[expense.category]}
-                    </span>
-                    <span className="text-xs font-medium text-[#0f6e56]">
-                      ¥{expense.amount.toLocaleString()}
-                    </span>
-                  </div>
-                </button>
-              </li>
-            ))}
+            {sorted.map((report) => {
+              const itemCount = report.items?.length ?? 0;
+              const total = totalAmount(report);
+
+              return (
+                <li key={report.id}>
+                  <button
+                    onClick={() => onSelectReport(report)}
+                    className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0
+                      ${selectedReport?.id === report.id ? "bg-[#f0faf7] border-l-2 border-l-[#0f6e56]" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <span className="text-xs text-gray-500 font-medium">
+                        {fmtMonth(report.month)}
+                      </span>
+                      {statusBadge(report.status)}
+                    </div>
+                    <p className="text-sm text-gray-700 truncate">
+                      {report.member_name}
+                    </p>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-[10px] text-gray-400">
+                        {itemCount}件
+                      </span>
+                      <span className="text-xs font-medium text-[#0f6e56]">
+                        ¥{total.toLocaleString()}
+                      </span>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

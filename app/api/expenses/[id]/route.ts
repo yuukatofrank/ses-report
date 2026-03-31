@@ -8,8 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { data, error } = await supabase
-    .from("expenses")
+
+  const { data: report, error } = await supabase
+    .from("expense_reports")
     .select("*")
     .eq("id", id)
     .single();
@@ -17,7 +18,18 @@ export async function GET(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
-  return NextResponse.json(data);
+
+  const { data: items, error: itemsError } = await supabase
+    .from("expense_items")
+    .select("*")
+    .eq("report_id", id)
+    .order("sort_order", { ascending: true });
+
+  if (itemsError) {
+    return NextResponse.json({ error: itemsError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ...report, items: items || [] });
 }
 
 export async function PUT(
@@ -54,27 +66,85 @@ export async function PUT(
     }
   }
 
-  const { data, error } = await supabase
-    .from("expenses")
-    .update({
-      title: body.title,
-      category: body.category,
-      amount: body.amount,
-      date: body.date,
-      description: body.description ?? null,
-      receipt_path: body.receipt_path ?? null,
-      status: body.status,
-      admin_comment: body.admin_comment ?? null,
-      updated_at: new Date().toISOString(),
-    })
+  // Update the expense_report
+  const updateData: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (body.status !== undefined) updateData.status = body.status;
+  if (body.admin_comment !== undefined)
+    updateData.admin_comment = body.admin_comment;
+
+  const { data: report, error: reportError } = await supabase
+    .from("expense_reports")
+    .update(updateData)
     .eq("id", id)
     .select()
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (reportError) {
+    return NextResponse.json(
+      { error: reportError.message },
+      { status: 500 }
+    );
   }
-  return NextResponse.json(data);
+
+  // Replace items if provided
+  let items: Record<string, unknown>[] = [];
+  if (body.items !== undefined) {
+    // Delete existing items
+    const { error: deleteError } = await supabase
+      .from("expense_items")
+      .delete()
+      .eq("report_id", id);
+
+    if (deleteError) {
+      return NextResponse.json(
+        { error: deleteError.message },
+        { status: 500 }
+      );
+    }
+
+    // Insert new items
+    if (body.items.length > 0) {
+      const itemsToInsert = body.items.map(
+        (item: Record<string, unknown>, index: number) => ({
+          report_id: id,
+          title: item.title,
+          category: item.category,
+          amount: item.amount,
+          date: item.date,
+          description: item.description || null,
+          receipt_path: item.receipt_path || null,
+          sort_order: item.sort_order ?? index,
+        })
+      );
+
+      const { data: insertedItems, error: itemsError } = await supabase
+        .from("expense_items")
+        .insert(itemsToInsert)
+        .select();
+
+      if (itemsError) {
+        return NextResponse.json(
+          { error: itemsError.message },
+          { status: 500 }
+        );
+      }
+
+      items = insertedItems || [];
+    }
+  } else {
+    // If items not provided in body, fetch existing items
+    const { data: existingItems } = await supabase
+      .from("expense_items")
+      .select("*")
+      .eq("report_id", id)
+      .order("sort_order", { ascending: true });
+
+    items = existingItems || [];
+  }
+
+  return NextResponse.json({ ...report, items });
 }
 
 export async function DELETE(
@@ -82,7 +152,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { error } = await supabase.from("expenses").delete().eq("id", id);
+
+  // Cascade delete: items are deleted via FK cascade in DB,
+  // but explicitly delete for safety
+  await supabase.from("expense_items").delete().eq("report_id", id);
+
+  const { error } = await supabase
+    .from("expense_reports")
+    .delete()
+    .eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

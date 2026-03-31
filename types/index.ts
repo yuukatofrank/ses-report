@@ -90,21 +90,28 @@ export const EXPENSE_CATEGORIES: Record<ExpenseCategory, string> = {
   other: "その他",
 };
 
-export interface Expense {
-  id: string;
-  member_id: string;
-  member_name: string;
-  month: string;
+export interface ExpenseItem {
+  id?: string;
+  report_id?: string;
   title: string;
   category: ExpenseCategory;
   amount: number;
   date: string;
   description: string | null;
   receipt_path: string | null;
+  sort_order: number;
+}
+
+export interface ExpenseReport {
+  id: string;
+  member_id: string;
+  member_name: string;
+  month: string;
   status: "draft" | "submitted" | "approved" | "returned";
   admin_comment: string | null;
   created_at: string;
   updated_at: string;
+  items?: ExpenseItem[];
 }
 
 export interface Invoice {

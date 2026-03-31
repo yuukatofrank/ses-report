@@ -1,45 +1,78 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Expense, ExpenseCategory, EXPENSE_CATEGORIES } from "@/types";
+import { ExpenseReport, ExpenseItem, ExpenseCategory, EXPENSE_CATEGORIES } from "@/types";
 
 interface ExpenseFormProps {
   memberId: string;
   memberName: string;
-  expense?: Expense;
-  onSave: (data: Partial<Expense>, status: "draft" | "submitted") => Promise<void>;
+  report?: ExpenseReport;
+  onSave: (data: { month: string; items: ExpenseItem[] }, status: "draft" | "submitted") => Promise<void>;
   onCancel: () => void;
   onDelete?: () => Promise<void>;
+}
+
+function emptyItem(sortOrder: number): ExpenseItem {
+  return {
+    title: "",
+    category: "transportation",
+    amount: 0,
+    date: new Date().toISOString().slice(0, 10),
+    description: null,
+    receipt_path: null,
+    sort_order: sortOrder,
+  };
 }
 
 export default function ExpenseForm({
   memberId,
   memberName,
-  expense,
+  report,
   onSave,
   onCancel,
   onDelete,
 }: ExpenseFormProps) {
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const defaultMonth = report?.month ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-  const [form, setForm] = useState({
-    title: expense?.title ?? "",
-    category: expense?.category ?? ("transportation" as ExpenseCategory),
-    amount: expense?.amount ?? 0,
-    date: expense?.date ?? today,
-    description: expense?.description ?? "",
+  const [month, setMonth] = useState(defaultMonth);
+  const [items, setItems] = useState<ExpenseItem[]>(() => {
+    if (report?.items && report.items.length > 0) {
+      return [...report.items].sort((a, b) => a.sort_order - b.sort_order);
+    }
+    return [emptyItem(0)];
   });
-
-  const [receiptPath, setReceiptPath] = useState<string | null>(expense?.receipt_path ?? null);
-  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
-  const update = (field: string, value: string | number) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const fileRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const handleUpload = async (file: File) => {
-    setUploading(true);
+  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+  const hasValidItem = items.some((item) => item.title && item.amount > 0);
+
+  // Update a specific item field
+  const updateItem = (index: number, field: keyof ExpenseItem, value: string | number | null) => {
+    setItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  // Add new blank item
+  const addItem = () => {
+    setItems((prev) => [...prev, emptyItem(prev.length)]);
+  };
+
+  // Remove item
+  const removeItem = (index: number) => {
+    if (items.length <= 1) return;
+    setItems((prev) =>
+      prev.filter((_, i) => i !== index).map((item, i) => ({ ...item, sort_order: i }))
+    );
+  };
+
+  // Upload receipt for a specific item
+  const handleUpload = async (index: number, file: File) => {
+    setUploadingIdx(index);
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -50,42 +83,34 @@ export default function ExpenseForm({
       });
       if (res.ok) {
         const data = await res.json();
-        setReceiptPath(data.path);
+        updateItem(index, "receipt_path", data.path);
       }
     } finally {
-      setUploading(false);
+      setUploadingIdx(null);
     }
   };
 
   const handleSave = async (status: "draft" | "submitted") => {
     setSaving(true);
     try {
-      await onSave(
-        {
-          member_id: memberId,
-          member_name: memberName,
-          month: form.date.slice(0, 7),
-          title: form.title,
-          category: form.category,
-          amount: form.amount,
-          date: form.date,
-          description: form.description || null,
-          receipt_path: receiptPath,
-        },
-        status
-      );
+      const cleanItems = items.map((item, i) => ({
+        ...item,
+        sort_order: i,
+        description: item.description || null,
+      }));
+      await onSave({ month, items: cleanItems }, status);
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-6 px-4">
+    <div className="max-w-4xl mx-auto py-6 px-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-800">
-            {expense ? "経費申請を編集" : "新しい経費申請"}
+            {report ? "経費申請を編集" : "新しい経費申請"}
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">{memberName}</p>
         </div>
@@ -98,154 +123,197 @@ export default function ExpenseForm({
       </div>
 
       <div className="space-y-5">
-        {/* Basic info */}
+        {/* Month selector */}
         <div className="card p-5">
-          <p className="section-header">申請内容</p>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="label">件名 *</label>
-              <input
-                type="text"
-                value={form.title}
-                onChange={(e) => update("title", e.target.value)}
-                className="input-field"
-                placeholder="例: 客先訪問の交通費"
-              />
-            </div>
-            <div>
-              <label className="label">カテゴリ *</label>
-              <select
-                value={form.category}
-                onChange={(e) => update("category", e.target.value)}
-                className="input-field"
+          <p className="section-header">対象月</p>
+          <input
+            type="month"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            className="input-field w-48"
+          />
+        </div>
+
+        {/* Items section */}
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <p className="section-header !mb-0">明細一覧</p>
+            <span className="text-sm text-gray-500">{items.length}件</span>
+          </div>
+
+          {/* Items table */}
+          <div className="space-y-3">
+            {items.map((item, idx) => (
+              <div
+                key={idx}
+                className="border border-gray-200 rounded-lg p-3 bg-gray-50/50 hover:bg-white transition-colors"
               >
-                {(Object.entries(EXPENSE_CATEGORIES) as [ExpenseCategory, string][]).map(
-                  ([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-            <div>
-              <label className="label">金額（円） *</label>
-              <input
-                type="number"
-                value={form.amount || ""}
-                onChange={(e) => update("amount", parseInt(e.target.value) || 0)}
-                className="input-field"
-                placeholder="0"
-                min={0}
-              />
-            </div>
-            <div>
-              <label className="label">日付 *</label>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => update("date", e.target.value)}
-                className="input-field"
-              />
-            </div>
-          </div>
-        </div>
+                <div className="grid grid-cols-12 gap-2 items-start">
+                  {/* Date */}
+                  <div className="col-span-3 md:col-span-2">
+                    <label className="label text-[10px]">日付</label>
+                    <input
+                      type="date"
+                      value={item.date}
+                      onChange={(e) => updateItem(idx, "date", e.target.value)}
+                      className="input-field text-xs"
+                    />
+                  </div>
 
-        {/* Description */}
-        <div className="card p-5">
-          <p className="section-header">詳細</p>
-          <div>
-            <label className="label">備考</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => update("description", e.target.value)}
-              className="textarea-field"
-              rows={3}
-              placeholder="用途や詳細を記入してください"
-            />
-          </div>
-        </div>
+                  {/* Title */}
+                  <div className="col-span-5 md:col-span-3">
+                    <label className="label text-[10px]">件名</label>
+                    <input
+                      type="text"
+                      value={item.title}
+                      onChange={(e) => updateItem(idx, "title", e.target.value)}
+                      className="input-field text-xs"
+                      placeholder="例: 客先訪問交通費"
+                    />
+                  </div>
 
-        {/* Receipt */}
-        <div className="card p-5">
-          <p className="section-header">領収書</p>
-          <div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*,.pdf"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleUpload(file);
-              }}
-            />
-            {receiptPath ? (
-              <div className="space-y-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/api/expenses/receipt/download?path=${encodeURIComponent(receiptPath)}`}
-                  alt="領収書"
-                  className="max-h-48 rounded-lg border border-gray-200 object-contain"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => fileRef.current?.click()}
-                    className="btn-secondary text-xs"
-                    disabled={uploading}
-                  >
-                    {uploading ? "アップロード中..." : "変更"}
-                  </button>
-                  <button
-                    onClick={() => setReceiptPath(null)}
-                    className="text-xs text-red-500 hover:text-red-700"
-                  >
-                    削除
-                  </button>
+                  {/* Category */}
+                  <div className="col-span-4 md:col-span-2">
+                    <label className="label text-[10px]">カテゴリ</label>
+                    <select
+                      value={item.category}
+                      onChange={(e) => updateItem(idx, "category", e.target.value)}
+                      className="input-field text-xs"
+                    >
+                      {(Object.entries(EXPENSE_CATEGORIES) as [ExpenseCategory, string][]).map(
+                        ([key, label]) => (
+                          <option key={key} value={key}>{label}</option>
+                        )
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Amount */}
+                  <div className="col-span-3 md:col-span-2">
+                    <label className="label text-[10px]">金額(円)</label>
+                    <input
+                      type="number"
+                      value={item.amount || ""}
+                      onChange={(e) => updateItem(idx, "amount", parseInt(e.target.value) || 0)}
+                      className="input-field text-xs"
+                      placeholder="0"
+                      min={0}
+                    />
+                  </div>
+
+                  {/* Receipt */}
+                  <div className="col-span-4 md:col-span-2">
+                    <label className="label text-[10px]">領収書</label>
+                    <input
+                      ref={(el) => { fileRefs.current[idx] = el; }}
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUpload(idx, file);
+                      }}
+                    />
+                    {item.receipt_path ? (
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] text-green-600 truncate flex-1">
+                          添付済
+                        </span>
+                        <button
+                          onClick={() => updateItem(idx, "receipt_path", null)}
+                          className="text-[10px] text-red-400 hover:text-red-600"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => fileRefs.current[idx]?.click()}
+                        disabled={uploadingIdx === idx}
+                        className="text-[10px] text-gray-500 hover:text-[#0f6e56] border border-dashed border-gray-300 rounded px-2 py-1.5 w-full text-center transition-colors"
+                      >
+                        {uploadingIdx === idx ? "..." : "アップロード"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Delete button */}
+                  <div className="col-span-1 flex items-end justify-center pb-1">
+                    <button
+                      onClick={() => removeItem(idx)}
+                      disabled={items.length <= 1}
+                      className="text-gray-400 hover:text-red-500 disabled:opacity-30 transition-colors p-1"
+                      title="この明細を削除"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Description row */}
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    value={item.description ?? ""}
+                    onChange={(e) => updateItem(idx, "description", e.target.value || null)}
+                    className="input-field text-xs w-full"
+                    placeholder="備考（任意）"
+                  />
                 </div>
               </div>
-            ) : (
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="w-full border-2 border-dashed border-gray-200 rounded-lg py-8 text-center
-                           text-sm text-gray-400 hover:border-[#0f6e56] hover:text-[#0f6e56] transition-colors"
-              >
-                {uploading ? "アップロード中..." : "クリックして領収書をアップロード"}
-              </button>
-            )}
+            ))}
           </div>
+
+          {/* Add item button */}
+          <button
+            onClick={addItem}
+            className="mt-3 w-full border-2 border-dashed border-gray-200 rounded-lg py-2.5 text-center
+                       text-sm text-gray-400 hover:border-[#0f6e56] hover:text-[#0f6e56] transition-colors"
+          >
+            + 明細を追加
+          </button>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-3 pb-6">
-          {onDelete && (
-            <button
-              onClick={async () => {
-                if (confirm("この経費申請を削除しますか？")) {
-                  await onDelete();
-                }
-              }}
-              className="btn-danger"
-            >
-              削除
-            </button>
-          )}
-          <div className="flex gap-3 ml-auto">
-            <button
-              onClick={() => handleSave("draft")}
-              disabled={saving || !form.title}
-              className="btn-secondary"
-            >
-              下書き保存
-            </button>
-            <button
-              onClick={() => handleSave("submitted")}
-              disabled={saving || !form.title || !form.amount}
-              className="btn-primary"
-            >
-              {saving ? "保存中..." : "申請する"}
-            </button>
+        {/* Total & Actions */}
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-semibold text-gray-700">合計金額</span>
+            <span className="text-xl font-bold text-[#0f6e56]">
+              ¥{totalAmount.toLocaleString()}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {onDelete && (
+              <button
+                onClick={async () => {
+                  if (confirm("この経費申請を削除しますか？")) {
+                    await onDelete();
+                  }
+                }}
+                className="btn-danger"
+              >
+                削除
+              </button>
+            )}
+            <div className="flex gap-3 ml-auto">
+              <button
+                onClick={() => handleSave("draft")}
+                disabled={saving}
+                className="btn-secondary"
+              >
+                下書き保存
+              </button>
+              <button
+                onClick={() => handleSave("submitted")}
+                disabled={saving || !hasValidItem}
+                className="btn-primary"
+              >
+                {saving ? "保存中..." : "申請する"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
