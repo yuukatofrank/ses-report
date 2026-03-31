@@ -444,7 +444,7 @@ function ExpensesContent() {
         selectedReport={selectedReport}
         onSelectReport={handleSelectReport}
         onNewReport={handleNewReport}
-        onNoExpense={!isSuperAdmin ? handleNoExpense : undefined}
+        onNoExpense={handleNoExpense}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -457,22 +457,20 @@ function ExpensesContent() {
             <p className="text-base font-medium">
               経費を選択するか、新規申請してください
             </p>
-            {!isSuperAdmin && (
-              <div className="flex items-center gap-3 mt-4">
-                <button
-                  onClick={handleNewReport}
-                  className="btn-primary text-sm"
-                >
-                  + 新規申請
-                </button>
-                <button
-                  onClick={handleNoExpense}
-                  className="btn-secondary text-sm"
-                >
-                  申請なし
-                </button>
-              </div>
-            )}
+            <div className="flex items-center gap-3 mt-4">
+              <button
+                onClick={handleNewReport}
+                className="btn-primary text-sm"
+              >
+                + 新規申請
+              </button>
+              <button
+                onClick={handleNoExpense}
+                className="btn-secondary text-sm"
+              >
+                申請なし
+              </button>
+            </div>
           </div>
         )}
 
