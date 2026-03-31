@@ -353,12 +353,12 @@ function ExpensesContent() {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
+        <div className="flex items-center gap-1.5 md:gap-3 overflow-x-auto flex-shrink-0">
           {/* Month filter */}
           <select
             value={selectedMonth}
             onChange={(e) => handleMonthChange(e.target.value)}
-            className="text-xs md:text-sm bg-white/10 text-white border border-white/20 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40"
+            className="text-xs md:text-sm bg-white/10 text-white border border-white/20 rounded-lg px-1.5 md:px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40 min-w-0"
           >
             {monthOptions.map((m) => (
               <option key={m} value={m} className="text-gray-800">
@@ -372,10 +372,10 @@ function ExpensesContent() {
             <select
               value={filterMemberId}
               onChange={(e) => handleMemberFilterChange(e.target.value)}
-              className="text-xs md:text-sm bg-white/10 text-white border border-white/20 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40"
+              className="text-xs md:text-sm bg-white/10 text-white border border-white/20 rounded-lg px-1.5 md:px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40 min-w-0 max-w-[100px] md:max-w-none"
             >
               <option value="all" className="text-gray-800">
-                全メンバー
+                全員
               </option>
               {allMembers.map((m) => (
                 <option key={m.id} value={m.id} className="text-gray-800">
@@ -389,7 +389,7 @@ function ExpensesContent() {
           <button
             onClick={handlePrintPdf}
             title="PDF出力"
-            className="text-white/70 hover:text-white border border-white/20 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            className="text-white/70 hover:text-white border border-white/20 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

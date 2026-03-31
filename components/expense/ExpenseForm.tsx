@@ -50,19 +50,16 @@ export default function ExpenseForm({
   const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
   const hasValidItem = items.some((item) => item.title && item.amount > 0);
 
-  // Update a specific item field
   const updateItem = (index: number, field: keyof ExpenseItem, value: string | number | null) => {
     setItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
     );
   };
 
-  // Add new blank item
   const addItem = () => {
     setItems((prev) => [...prev, emptyItem(prev.length)]);
   };
 
-  // Remove item
   const removeItem = (index: number) => {
     if (items.length <= 1) return;
     setItems((prev) =>
@@ -70,7 +67,6 @@ export default function ExpenseForm({
     );
   };
 
-  // Upload receipt for a specific item
   const handleUpload = async (index: number, file: File) => {
     setUploadingIdx(index);
     try {
@@ -106,63 +102,76 @@ export default function ExpenseForm({
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-6 px-4">
+    <div className="max-w-4xl mx-auto py-4 md:py-6 px-3 md:px-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-lg md:text-xl font-bold text-gray-800">
             {report ? "経費申請を編集" : "新しい経費申請"}
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">{memberName}</p>
+          <p className="text-xs md:text-sm text-gray-500 mt-0.5">{memberName}</p>
         </div>
         <button
           onClick={onCancel}
-          className="text-gray-500 hover:text-gray-700 text-sm"
+          className="text-gray-500 hover:text-gray-700 text-xs md:text-sm"
         >
           ← 戻る
         </button>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-4 md:space-y-5">
         {/* Month selector */}
-        <div className="card p-5">
+        <div className="card p-4 md:p-5">
           <p className="section-header">対象月</p>
           <input
             type="month"
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="input-field w-48"
+            className="input-field w-full md:w-48"
           />
         </div>
 
         {/* Items section */}
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="card p-4 md:p-5">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
             <p className="section-header !mb-0">明細一覧</p>
             <span className="text-sm text-gray-500">{items.length}件</span>
           </div>
 
-          {/* Items table */}
           <div className="space-y-3">
             {items.map((item, idx) => (
               <div
                 key={idx}
                 className="border border-gray-200 rounded-lg p-3 bg-gray-50/50 hover:bg-white transition-colors"
               >
-                <div className="grid grid-cols-12 gap-2 items-start">
-                  {/* Date */}
-                  <div className="col-span-3 md:col-span-2">
-                    <label className="label text-[10px]">日付</label>
-                    <input
-                      type="date"
-                      value={item.date}
-                      onChange={(e) => updateItem(idx, "date", e.target.value)}
-                      className="input-field text-xs"
-                    />
+                {/* Mobile: stacked layout / Desktop: grid layout */}
+                <div className="space-y-2 md:hidden">
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label className="label text-[10px]">日付</label>
+                      <input
+                        type="date"
+                        value={item.date}
+                        onChange={(e) => updateItem(idx, "date", e.target.value)}
+                        className="input-field text-xs"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="label text-[10px]">カテゴリ</label>
+                      <select
+                        value={item.category}
+                        onChange={(e) => updateItem(idx, "category", e.target.value)}
+                        className="input-field text-xs"
+                      >
+                        {(Object.entries(EXPENSE_CATEGORIES) as [ExpenseCategory, string][]).map(
+                          ([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                          )
+                        )}
+                      </select>
+                    </div>
                   </div>
-
-                  {/* Title */}
-                  <div className="col-span-5 md:col-span-3">
+                  <div>
                     <label className="label text-[10px]">件名</label>
                     <input
                       type="text"
@@ -172,78 +181,54 @@ export default function ExpenseForm({
                       placeholder="例: 客先訪問交通費"
                     />
                   </div>
-
-                  {/* Category */}
-                  <div className="col-span-4 md:col-span-2">
-                    <label className="label text-[10px]">カテゴリ</label>
-                    <select
-                      value={item.category}
-                      onChange={(e) => updateItem(idx, "category", e.target.value)}
-                      className="input-field text-xs"
-                    >
-                      {(Object.entries(EXPENSE_CATEGORIES) as [ExpenseCategory, string][]).map(
-                        ([key, label]) => (
-                          <option key={key} value={key}>{label}</option>
-                        )
-                      )}
-                    </select>
-                  </div>
-
-                  {/* Amount */}
-                  <div className="col-span-3 md:col-span-2">
-                    <label className="label text-[10px]">金額(円)</label>
-                    <input
-                      type="number"
-                      value={item.amount || ""}
-                      onChange={(e) => updateItem(idx, "amount", parseInt(e.target.value) || 0)}
-                      className="input-field text-xs"
-                      placeholder="0"
-                      min={0}
-                    />
-                  </div>
-
-                  {/* Receipt */}
-                  <div className="col-span-4 md:col-span-2">
-                    <label className="label text-[10px]">領収書</label>
-                    <input
-                      ref={(el) => { fileRefs.current[idx] = el; }}
-                      type="file"
-                      accept="image/*,.pdf"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleUpload(idx, file);
-                      }}
-                    />
-                    {item.receipt_path ? (
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-green-600 truncate flex-1">
-                          添付済
-                        </span>
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <label className="label text-[10px]">金額(円)</label>
+                      <input
+                        type="number"
+                        value={item.amount || ""}
+                        onChange={(e) => updateItem(idx, "amount", parseInt(e.target.value) || 0)}
+                        className="input-field text-xs"
+                        placeholder="0"
+                        min={0}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="label text-[10px]">領収書</label>
+                      <input
+                        ref={(el) => { fileRefs.current[idx] = el; }}
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleUpload(idx, file);
+                        }}
+                      />
+                      {item.receipt_path ? (
+                        <div className="flex items-center gap-1 h-[34px]">
+                          <span className="text-[10px] text-green-600 truncate flex-1">添付済</span>
+                          <button
+                            onClick={() => updateItem(idx, "receipt_path", null)}
+                            className="text-[10px] text-red-400 hover:text-red-600"
+                          >
+                            削除
+                          </button>
+                        </div>
+                      ) : (
                         <button
-                          onClick={() => updateItem(idx, "receipt_path", null)}
-                          className="text-[10px] text-red-400 hover:text-red-600"
+                          onClick={() => fileRefs.current[idx]?.click()}
+                          disabled={uploadingIdx === idx}
+                          className="text-[10px] text-gray-500 hover:text-[#0f6e56] border border-dashed border-gray-300 rounded px-2 py-1.5 w-full text-center transition-colors"
                         >
-                          削除
+                          {uploadingIdx === idx ? "..." : "アップロード"}
                         </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => fileRefs.current[idx]?.click()}
-                        disabled={uploadingIdx === idx}
-                        className="text-[10px] text-gray-500 hover:text-[#0f6e56] border border-dashed border-gray-300 rounded px-2 py-1.5 w-full text-center transition-colors"
-                      >
-                        {uploadingIdx === idx ? "..." : "アップロード"}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Delete button */}
-                  <div className="col-span-1 flex items-end justify-center pb-1">
+                      )}
+                    </div>
                     <button
                       onClick={() => removeItem(idx)}
                       disabled={items.length <= 1}
-                      className="text-gray-400 hover:text-red-500 disabled:opacity-30 transition-colors p-1"
+                      className="text-gray-400 hover:text-red-500 disabled:opacity-30 transition-colors p-1 mb-1"
                       title="この明細を削除"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -251,10 +236,6 @@ export default function ExpenseForm({
                       </svg>
                     </button>
                   </div>
-                </div>
-
-                {/* Description row */}
-                <div className="mt-2">
                   <input
                     type="text"
                     value={item.description ?? ""}
@@ -263,11 +244,113 @@ export default function ExpenseForm({
                     placeholder="備考（任意）"
                   />
                 </div>
+
+                {/* Desktop: grid layout */}
+                <div className="hidden md:block">
+                  <div className="grid grid-cols-12 gap-2 items-start">
+                    <div className="col-span-2">
+                      <label className="label text-[10px]">日付</label>
+                      <input
+                        type="date"
+                        value={item.date}
+                        onChange={(e) => updateItem(idx, "date", e.target.value)}
+                        className="input-field text-xs"
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <label className="label text-[10px]">件名</label>
+                      <input
+                        type="text"
+                        value={item.title}
+                        onChange={(e) => updateItem(idx, "title", e.target.value)}
+                        className="input-field text-xs"
+                        placeholder="例: 客先訪問交通費"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="label text-[10px]">カテゴリ</label>
+                      <select
+                        value={item.category}
+                        onChange={(e) => updateItem(idx, "category", e.target.value)}
+                        className="input-field text-xs"
+                      >
+                        {(Object.entries(EXPENSE_CATEGORIES) as [ExpenseCategory, string][]).map(
+                          ([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                          )
+                        )}
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="label text-[10px]">金額(円)</label>
+                      <input
+                        type="number"
+                        value={item.amount || ""}
+                        onChange={(e) => updateItem(idx, "amount", parseInt(e.target.value) || 0)}
+                        className="input-field text-xs"
+                        placeholder="0"
+                        min={0}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="label text-[10px]">領収書</label>
+                      <input
+                        ref={(el) => { fileRefs.current[idx] = el; }}
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleUpload(idx, file);
+                        }}
+                      />
+                      {item.receipt_path ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-green-600 truncate flex-1">添付済</span>
+                          <button
+                            onClick={() => updateItem(idx, "receipt_path", null)}
+                            className="text-[10px] text-red-400 hover:text-red-600"
+                          >
+                            削除
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => fileRefs.current[idx]?.click()}
+                          disabled={uploadingIdx === idx}
+                          className="text-[10px] text-gray-500 hover:text-[#0f6e56] border border-dashed border-gray-300 rounded px-2 py-1.5 w-full text-center transition-colors"
+                        >
+                          {uploadingIdx === idx ? "..." : "アップロード"}
+                        </button>
+                      )}
+                    </div>
+                    <div className="col-span-1 flex items-end justify-center pb-1">
+                      <button
+                        onClick={() => removeItem(idx)}
+                        disabled={items.length <= 1}
+                        className="text-gray-400 hover:text-red-500 disabled:opacity-30 transition-colors p-1"
+                        title="この明細を削除"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      value={item.description ?? ""}
+                      onChange={(e) => updateItem(idx, "description", e.target.value || null)}
+                      className="input-field text-xs w-full"
+                      placeholder="備考（任意）"
+                    />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
 
-          {/* Add item button */}
           <button
             onClick={addItem}
             className="mt-3 w-full border-2 border-dashed border-gray-200 rounded-lg py-2.5 text-center
@@ -278,7 +361,7 @@ export default function ExpenseForm({
         </div>
 
         {/* Total & Actions */}
-        <div className="card p-5">
+        <div className="card p-4 md:p-5">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-semibold text-gray-700">合計金額</span>
             <span className="text-xl font-bold text-[#0f6e56]">
@@ -286,7 +369,7 @@ export default function ExpenseForm({
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
             {onDelete && (
               <button
                 onClick={async () => {
@@ -294,23 +377,23 @@ export default function ExpenseForm({
                     await onDelete();
                   }
                 }}
-                className="btn-danger"
+                className="btn-danger text-xs md:text-sm"
               >
                 削除
               </button>
             )}
-            <div className="flex gap-3 ml-auto">
+            <div className="flex gap-2 md:gap-3 ml-auto">
               <button
                 onClick={() => handleSave("draft")}
                 disabled={saving}
-                className="btn-secondary"
+                className="btn-secondary text-xs md:text-sm"
               >
                 下書き保存
               </button>
               <button
                 onClick={() => handleSave("submitted")}
                 disabled={saving || !hasValidItem}
-                className="btn-primary"
+                className="btn-primary text-xs md:text-sm"
               >
                 {saving ? "保存中..." : "申請する"}
               </button>
