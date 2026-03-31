@@ -6,6 +6,7 @@ import { ExpenseReport, EXPENSE_CATEGORIES } from "@/types";
 interface ExpenseViewerProps {
   report: ExpenseReport;
   onEdit?: () => void;
+  onDelete?: () => Promise<void>;
   onApprove?: () => Promise<void>;
   onReturn?: (comment: string) => Promise<void>;
   isSuperAdmin?: boolean;
@@ -40,6 +41,7 @@ function fmtMonth(ym: string): string {
 export default function ExpenseViewer({
   report,
   onEdit,
+  onDelete,
   onApprove,
   onReturn,
   isSuperAdmin,
@@ -49,6 +51,7 @@ export default function ExpenseViewer({
   const [returnComment, setReturnComment] = useState("");
   const [returning, setReturning] = useState(false);
   const [approving, setApproving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const canOwnerEdit =
     canEdit && (report.status === "draft" || report.status === "returned");
@@ -109,6 +112,26 @@ export default function ExpenseViewer({
             {canOwnerEdit && onEdit && (
               <button onClick={onEdit} className="btn-secondary">
                 編集
+              </button>
+            )}
+
+            {/* Delete */}
+            {canOwnerEdit && onDelete && (
+              <button
+                onClick={async () => {
+                  if (!confirm("この経費申請を削除しますか？")) return;
+                  setDeleting(true);
+                  try {
+                    await onDelete();
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                disabled={deleting}
+                className="flex items-center gap-1.5 text-red-400 hover:text-red-600 px-2 py-1.5
+                           rounded-lg text-sm transition-colors disabled:opacity-50"
+              >
+                {deleting ? "削除中..." : "削除"}
               </button>
             )}
           </div>

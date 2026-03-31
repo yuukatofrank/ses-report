@@ -461,6 +461,7 @@ function ExpensesContent() {
           <ExpenseViewer
             report={selectedReport}
             onEdit={canEdit ? handleEditReport : undefined}
+            onDelete={canEdit ? handleDeleteReport : undefined}
             onApprove={
               isSuperAdmin && selectedReport.status === "submitted"
                 ? handleApproveReport
