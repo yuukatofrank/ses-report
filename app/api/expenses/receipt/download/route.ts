@@ -42,16 +42,10 @@ export async function GET(request: Request) {
     });
   }
 
-  // Default: redirect to signed URL (inline view)
-  const downloadName = searchParams.get("filename");
-  let download: string | undefined;
-  if (downloadName) {
-    const sExt = path.includes(".") ? "." + path.split(".").pop() : "";
-    download = downloadName + sExt;
-  }
+  // Default: redirect to signed URL (inline view, no download)
   const { data: urlData, error } = await supabaseAdmin.storage
     .from("receipts")
-    .createSignedUrl(path, 60, download ? { download } : undefined);
+    .createSignedUrl(path, 60);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
