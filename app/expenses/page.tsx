@@ -89,12 +89,14 @@ function ExpensesContent() {
       const isSA = userEmail === adminEmail;
 
       if (isSA) {
-        const res = await fetch("/api/members");
-        if (res.ok) {
-          const members: Member[] = await res.json();
-          setAllMembers(members);
+        // Parallel fetch: members + reports
+        const [membersRes] = await Promise.all([
+          fetch("/api/members"),
+          fetchReports("all", selectedMonth),
+        ]);
+        if (membersRes.ok) {
+          setAllMembers(await membersRes.json());
         }
-        await fetchReports("all", selectedMonth);
       } else {
         setFilterMemberId(profile.id);
         await fetchReports(profile.id, selectedMonth);
@@ -122,13 +124,10 @@ function ExpensesContent() {
     await fetchReports(memberId, selectedMonth);
   };
 
-  // Select a report -> fetch detail with items
-  const handleSelectReport = async (report: ExpenseReport) => {
-    const detail = await fetchReportDetail(report.id);
-    if (detail) {
-      setSelectedReport(detail);
-      setViewMode("view");
-    }
+  // Select a report - use data already fetched in the list (includes items)
+  const handleSelectReport = (report: ExpenseReport) => {
+    setSelectedReport(report);
+    setViewMode("view");
   };
 
   const handleNewReport = () => {
