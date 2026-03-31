@@ -17,14 +17,23 @@ export async function POST(request: Request) {
   const ext = file.name.split(".").pop() || "png";
   const dateStr = (expenseDate || new Date().toISOString().slice(0, 10)).replace(/-/g, "");
 
-  // Count existing files with same date prefix to determine sequence number
+  // Find max sequence number for this date to avoid collision
   const supabaseAdmin = createSupabaseAdminClient();
-  const prefix = `${memberId}/${dateStr}_`;
   const { data: existing } = await supabaseAdmin.storage
     .from("receipts")
     .list(memberId, { search: `${dateStr}_` });
-  const seq = (existing?.length ?? 0) + 1;
-  const seqStr = String(seq).padStart(2, "0");
+
+  let maxSeq = 0;
+  if (existing) {
+    for (const f of existing) {
+      const match = f.name.match(new RegExp(`^${dateStr}_(\\d+)\\.`));
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (n > maxSeq) maxSeq = n;
+      }
+    }
+  }
+  const seqStr = String(maxSeq + 1).padStart(2, "0");
 
   const filePath = `${memberId}/${dateStr}_${seqStr}.${ext}`;
 
