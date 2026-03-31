@@ -77,6 +77,7 @@ export default function ExpenseForm({
       const formData = new FormData();
       formData.append("file", file);
       formData.append("member_id", memberId);
+      formData.append("expense_date", items[index].date);
       const res = await fetch("/api/expenses/receipt", {
         method: "POST",
         body: formData,
