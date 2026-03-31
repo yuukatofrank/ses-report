@@ -315,6 +315,7 @@ function HomeContent() {
 
   const handleDeleteReport = async () => {
     if (!selectedReport) return;
+    if (!confirm("この月次報告を削除しますか？")) return;
     const res = await fetch(`/api/reports/${selectedReport.id}`, { method: "DELETE" });
     if (res.ok) {
       if (member) await fetchReports(member.id);

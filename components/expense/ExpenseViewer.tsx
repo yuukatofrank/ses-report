@@ -78,6 +78,7 @@ export default function ExpenseViewer({
             {isSuperAdmin && report.status === "submitted" && onApprove && (
               <button
                 onClick={async () => {
+                  if (!confirm(`${report.member_name}さんの経費申請を承認しますか？`)) return;
                   setApproving(true);
                   try { await onApprove(); } finally { setApproving(false); }
                 }}

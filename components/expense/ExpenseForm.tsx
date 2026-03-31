@@ -391,7 +391,10 @@ export default function ExpenseForm({
                 下書き保存
               </button>
               <button
-                onClick={() => handleSave("submitted")}
+                onClick={() => {
+                  if (!confirm("経費を申請しますか？")) return;
+                  handleSave("submitted");
+                }}
                 disabled={saving || !hasValidItem}
                 className="btn-primary text-xs md:text-sm"
               >

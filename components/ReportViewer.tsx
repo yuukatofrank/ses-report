@@ -88,6 +88,7 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
   const [submitting, setSubmitting] = useState(false);
   const handleSubmit = async () => {
     if (!onSubmit) return;
+    if (!confirm("月次報告を提出しますか？")) return;
     setSubmitting(true);
     try {
       await onSubmit();
@@ -193,6 +194,7 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
   };
 
   const handleDeleteComment = async (id: string) => {
+    if (!confirm("このコメントを削除しますか？")) return;
     await supabaseClient.from("comments").delete().eq("id", id);
     await fetchComments();
   };
