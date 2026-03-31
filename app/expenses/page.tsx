@@ -311,7 +311,6 @@ function ExpensesContent() {
     : true;
   const canEdit =
     isOwnReport &&
-    !isSuperAdmin &&
     (selectedReport?.status === "draft" ||
       selectedReport?.status === "returned");
 
