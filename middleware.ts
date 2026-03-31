@@ -42,6 +42,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
+  // 請求書関連は最高権限ユーザーのみアクセス可
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const isInvoicePath =
+    pathname.startsWith("/invoices") ||
+    pathname.startsWith("/api/invoices") ||
+    pathname.startsWith("/api/clients") ||
+    pathname.startsWith("/api/projects");
+
+  if (isInvoicePath && user?.email !== adminEmail) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   return supabaseResponse;
 }
 

@@ -71,7 +71,7 @@ export default function AuthPage() {
           >
             <span className="text-white text-xl">📋</span>
           </div>
-          <h1 className="text-xl font-bold text-gray-800">frankSQUARE月次報告</h1>
+          <h1 className="text-xl font-bold text-gray-800">frankSQUARE管理システム</h1>
           <p className="text-sm text-gray-500 mt-1">
             {mode === "login" ? "アカウントにログイン" : "新規アカウント作成"}
           </p>

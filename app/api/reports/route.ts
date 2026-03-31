@@ -4,15 +4,15 @@ import { supabase } from "@/lib/supabase";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const memberId = searchParams.get("member_id");
+  const month = searchParams.get("month");
 
   let query = supabase
     .from("reports")
     .select("*")
     .order("month", { ascending: false });
 
-  if (memberId) {
-    query = query.eq("member_id", memberId);
-  }
+  if (memberId) query = query.eq("member_id", memberId);
+  if (month) query = query.eq("month", month);
 
   const { data, error } = await query;
 
