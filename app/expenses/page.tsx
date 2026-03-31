@@ -59,22 +59,20 @@ function ExpensesContent() {
   }, []);
 
   const fetchReports = useCallback(
-    async (memberId?: string, month?: string) => {
+    async (memberId?: string, month?: string): Promise<ExpenseReport[]> => {
       const params = new URLSearchParams();
       if (memberId && memberId !== "all") params.set("member_id", memberId);
       if (month) params.set("month", month);
       const res = await fetch(`/api/expenses?${params.toString()}`);
-      if (res.ok) setReports(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setReports(data);
+        return data;
+      }
+      return [];
     },
     []
   );
-
-  // Fetch a single report with items (for viewing/editing)
-  const fetchReportDetail = useCallback(async (reportId: string): Promise<ExpenseReport | null> => {
-    const res = await fetch(`/api/expenses/${reportId}`);
-    if (res.ok) return await res.json();
-    return null;
-  }, []);
 
   // Init
   useEffect(() => {
@@ -158,12 +156,10 @@ function ExpensesContent() {
     if (res.ok) {
       const saved = await res.json();
       const mid = isSuperAdmin ? filterMemberId : member.id;
-      await fetchReports(mid, selectedMonth);
-      const detail = await fetchReportDetail(saved.id);
-      if (detail) {
-        setSelectedReport(detail);
-        setViewMode("view");
-      }
+      const updated = await fetchReports(mid, selectedMonth);
+      const found = updated.find((r: ExpenseReport) => r.id === saved.id);
+      setSelectedReport(found ?? { ...saved, items: [] });
+      setViewMode("view");
       // Notify admin
       fetch("/api/expenses/notify-submitted", {
         method: "POST",
@@ -205,12 +201,10 @@ function ExpensesContent() {
       if (res.ok) {
         const saved = await res.json();
         const mid = isSuperAdmin ? filterMemberId : member.id;
-        await fetchReports(mid, selectedMonth);
-        const detail = await fetchReportDetail(saved.id);
-        if (detail) {
-          setSelectedReport(detail);
-          setViewMode("view");
-        }
+        const updated = await fetchReports(mid, selectedMonth);
+        const found = updated.find((r: ExpenseReport) => r.id === saved.id);
+        setSelectedReport(found ?? saved);
+        setViewMode("view");
         // Send notification email when submitted
         if (status === "submitted") {
           const totalAmount = data.items.reduce((sum, item) => sum + item.amount, 0);
@@ -243,12 +237,10 @@ function ExpensesContent() {
       if (res.ok) {
         const saved = await res.json();
         const mid = isSuperAdmin ? filterMemberId : member?.id;
-        await fetchReports(mid, selectedMonth);
-        const detail = await fetchReportDetail(saved.id);
-        if (detail) {
-          setSelectedReport(detail);
-          setViewMode("view");
-        }
+        const updated = await fetchReports(mid, selectedMonth);
+        const found = updated.find((r: ExpenseReport) => r.id === saved.id);
+        setSelectedReport(found ?? saved);
+        setViewMode("view");
         // Send notification email when submitted
         if (status === "submitted" && member) {
           const totalAmount = data.items.reduce((sum, item) => sum + item.amount, 0);
@@ -307,9 +299,9 @@ function ExpensesContent() {
         body: JSON.stringify({ status: "approved" }),
       });
       if (res.ok) {
-        await fetchReports(filterMemberId, selectedMonth);
-        const detail = await fetchReportDetail(selectedReport.id);
-        if (detail) setSelectedReport(detail);
+        const updated = await fetchReports(filterMemberId, selectedMonth);
+        const found = updated.find((r: ExpenseReport) => r.id === selectedReport.id);
+        if (found) setSelectedReport(found);
       }
     } finally {
       setProcessing(null);
@@ -328,9 +320,9 @@ function ExpensesContent() {
       }),
     });
     if (res.ok) {
-      await fetchReports(filterMemberId, selectedMonth);
-      const detail = await fetchReportDetail(selectedReport.id);
-      if (detail) setSelectedReport(detail);
+      const updated = await fetchReports(filterMemberId, selectedMonth);
+      const found = updated.find((r: ExpenseReport) => r.id === selectedReport.id);
+      if (found) setSelectedReport(found);
       // Send return notification email to the submitter
       fetch("/api/expenses/notify-returned", {
         method: "POST",
