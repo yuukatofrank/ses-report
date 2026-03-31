@@ -28,6 +28,7 @@ function ExpensesContent() {
   const [selectedReport, setSelectedReport] = useState<ExpenseReport | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [processing, setProcessing] = useState<string | null>(null);
 
   // Filters
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
@@ -113,15 +114,19 @@ function ExpensesContent() {
     setSelectedMonth(month);
     setSelectedReport(null);
     setViewMode("idle");
+    setProcessing("読み込み中...");
     const mid = isSuperAdmin ? filterMemberId : member?.id;
     await fetchReports(mid, month);
+    setProcessing(null);
   };
 
   const handleMemberFilterChange = async (memberId: string) => {
     setFilterMemberId(memberId);
     setSelectedReport(null);
     setViewMode("idle");
+    setProcessing("読み込み中...");
     await fetchReports(memberId, selectedMonth);
+    setProcessing(null);
   };
 
   // Select a report - use data already fetched in the list (includes items)
@@ -138,6 +143,7 @@ function ExpensesContent() {
   const handleNoExpense = async () => {
     if (!member) return;
     if (!confirm(`${fmtMonth(selectedMonth)}の経費を「申請なし」として報告しますか？`)) return;
+    setProcessing("報告中...");
     const res = await fetch("/api/expenses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -175,12 +181,15 @@ function ExpensesContent() {
       const err = await res.json();
       alert(err.error || "報告に失敗しました");
     }
+    setProcessing(null);
   };
 
   const handleSaveReport = async (
     data: { month: string; items: ExpenseItem[] },
     status: "draft" | "submitted"
   ) => {
+    setProcessing(status === "submitted" ? "申請中..." : "保存中...");
+    try {
     if (viewMode === "form-new" && member) {
       const res = await fetch("/api/expenses", {
         method: "POST",
@@ -259,6 +268,9 @@ function ExpensesContent() {
         alert("更新に失敗しました");
       }
     }
+    } finally {
+      setProcessing(null);
+    }
   };
 
   const handleEditReport = () => {
@@ -267,35 +279,46 @@ function ExpensesContent() {
 
   const handleDeleteReport = async () => {
     if (!selectedReport) return;
-    const res = await fetch(`/api/expenses/${selectedReport.id}`, {
-      method: "DELETE",
-    });
-    if (res.ok) {
-      const mid = isSuperAdmin ? filterMemberId : member?.id;
-      await fetchReports(mid, selectedMonth);
-      setSelectedReport(null);
-      setViewMode("idle");
-    } else {
-      alert("削除に失敗しました");
+    setProcessing("削除中...");
+    try {
+      const res = await fetch(`/api/expenses/${selectedReport.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        const mid = isSuperAdmin ? filterMemberId : member?.id;
+        await fetchReports(mid, selectedMonth);
+        setSelectedReport(null);
+        setViewMode("idle");
+      } else {
+        alert("削除に失敗しました");
+      }
+    } finally {
+      setProcessing(null);
     }
   };
 
   const handleApproveReport = async () => {
     if (!selectedReport) return;
-    const res = await fetch(`/api/expenses/${selectedReport.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "approved" }),
-    });
-    if (res.ok) {
-      await fetchReports(filterMemberId, selectedMonth);
-      const detail = await fetchReportDetail(selectedReport.id);
-      if (detail) setSelectedReport(detail);
+    setProcessing("承認中...");
+    try {
+      const res = await fetch(`/api/expenses/${selectedReport.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "approved" }),
+      });
+      if (res.ok) {
+        await fetchReports(filterMemberId, selectedMonth);
+        const detail = await fetchReportDetail(selectedReport.id);
+        if (detail) setSelectedReport(detail);
+      }
+    } finally {
+      setProcessing(null);
     }
   };
 
   const handleReturnReport = async (comment: string) => {
     if (!selectedReport) return;
+    setProcessing("差し戻し中...");
     const res = await fetch(`/api/expenses/${selectedReport.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -321,6 +344,7 @@ function ExpensesContent() {
         }),
       }).catch(console.error);
     }
+    setProcessing(null);
   };
 
   // PDF download
@@ -443,6 +467,16 @@ function ExpensesContent() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
+
+      {/* Processing overlay */}
+      {processing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-xl shadow-lg px-6 py-4 flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-[#0f6e56] border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-medium text-gray-700">{processing}</span>
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <main className="md:ml-[260px] min-h-screen" style={{ paddingTop: "var(--header-total)" }}>
