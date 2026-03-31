@@ -172,14 +172,22 @@ export default function ExpenseViewer({
                     </td>
                     <td className="px-4 py-2.5 text-center">
                       {item.receipt_path ? (
-                        <a
-                          href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-[#0f6e56] hover:underline"
-                        >
-                          表示
-                        </a>
+                        <span className="flex items-center justify-center gap-2">
+                          <a
+                            href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-[#0f6e56] hover:underline"
+                          >
+                            表示
+                          </a>
+                          <a
+                            href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}&mode=download`}
+                            className="text-xs text-gray-400 hover:text-gray-600 hover:underline"
+                          >
+                            DL
+                          </a>
+                        </span>
                       ) : (
                         <span className="text-xs text-gray-300">-</span>
                       )}
