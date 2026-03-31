@@ -126,14 +126,18 @@ export default function ExpenseList({
                       <p className="text-sm text-gray-700 truncate">
                         {report.member_name}
                       </p>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-[10px] text-gray-400">
-                          {itemCount}件
-                        </span>
-                        <span className="text-xs font-medium text-[#0f6e56]">
-                          ¥{total.toLocaleString()}
-                        </span>
-                      </div>
+                      {report.status !== "no_expense" ? (
+                        <div className="flex items-center justify-between mt-0.5">
+                          <span className="text-[10px] text-gray-400">
+                            {itemCount}件
+                          </span>
+                          <span className="text-xs font-medium text-[#0f6e56]">
+                            ¥{total.toLocaleString()}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-gray-400 mt-0.5">経費なし</p>
+                      )}
                     </button>
                   </li>
                 );

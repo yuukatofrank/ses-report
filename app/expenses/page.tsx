@@ -10,18 +10,6 @@ import ExpenseViewer from "@/components/expense/ExpenseViewer";
 
 type ViewMode = "idle" | "form-new" | "form-edit" | "view";
 
-function generateMonthOptions(): string[] {
-  const months: string[] = [];
-  const now = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-    );
-  }
-  return months;
-}
-
 function fmtMonth(ym: string): string {
   const [y, m] = ym.split("-");
   return `${y}年${parseInt(m)}月`;
@@ -365,8 +353,6 @@ function ExpensesContent() {
     );
   }
 
-  const monthOptions = generateMonthOptions();
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f7f7f5" }}>
       {/* Header */}
@@ -398,17 +384,12 @@ function ExpensesContent() {
 
           <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
             {/* Month filter */}
-            <select
+            <input
+              type="month"
               value={selectedMonth}
               onChange={(e) => handleMonthChange(e.target.value)}
-              className="text-xs md:text-sm bg-white/10 text-white border border-white/20 rounded-lg px-1.5 md:px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40 min-w-0"
-            >
-              {monthOptions.map((m) => (
-                <option key={m} value={m} className="text-gray-800">
-                  {fmtMonth(m)}
-                </option>
-              ))}
-            </select>
+              className="text-xs md:text-sm bg-white/10 text-white border border-white/20 rounded-lg px-1.5 md:px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40 min-w-0 [color-scheme:dark]"
+            />
 
             {/* Member filter (admin only) */}
             {isSuperAdmin && (
