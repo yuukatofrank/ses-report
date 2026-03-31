@@ -282,6 +282,7 @@ function HomeContent() {
 
   const handleReviewReport = async () => {
     if (!selectedReport) return;
+    if (!confirm(`${selectedReport.member_name}さんの月次報告を確認済みにしますか？`)) return;
     const res = await fetch(`/api/reports/${selectedReport.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -292,19 +293,21 @@ function HomeContent() {
       setSelectedReport(updated);
       if (viewingMember) await fetchReports(viewingMember.id);
 
-      // 報告者へ確認完了メールを送信
-      if (viewingMember?.email) {
+      // 報告者へ確認完了メールを送信（viewingMemberではなくレポートのmember_idから取得）
+      const reportAuthor = allMembers.find((m) => m.id === selectedReport.member_id);
+      const authorEmail = reportAuthor?.email;
+      if (authorEmail) {
         fetch("/api/notify-reviewed", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            memberEmail: viewingMember.email,
+            memberEmail: authorEmail,
             memberName: selectedReport.member_name,
             month: selectedReport.month,
             project: selectedReport.project,
             reportUrl: `${window.location.origin}?report_id=${selectedReport.id}`,
           }),
-        });
+        }).catch(console.error);
       }
     }
   };
