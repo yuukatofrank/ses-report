@@ -48,7 +48,7 @@ export default function Header({ member, onEditProfile, onToggleSidebar }: Heade
           </svg>
         </button>
         <h1 className="text-white font-bold text-base md:text-lg tracking-wide">
-          frankSQUARE<span className="hidden sm:inline">月次報告</span><span className="sm:hidden">月報</span>
+          frankSQUARE<span className="hidden sm:inline">管理システム</span><span className="sm:hidden">管理</span>
         </h1>
       </div>
 
@@ -59,14 +59,33 @@ export default function Header({ member, onEditProfile, onToggleSidebar }: Heade
           </span>
         )}
 
-        {isAdmin && (
+        {member && (
           <button
-            onClick={() => router.push("/admin")}
+            onClick={() => router.push("/expenses")}
             className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
                        font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
           >
-            管理
+            経費申請
           </button>
+        )}
+
+        {isAdmin && (
+          <>
+            <button
+              onClick={() => router.push("/invoices")}
+              className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
+                         font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
+            >
+              請求書
+            </button>
+            <button
+              onClick={() => router.push("/admin")}
+              className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
+                         font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
+            >
+              管理
+            </button>
+          </>
         )}
 
         <button
