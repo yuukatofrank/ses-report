@@ -263,13 +263,14 @@ function HomeContent() {
       setSelectedReport(updated);
       if (viewingMember) await fetchReports(viewingMember.id);
 
-      // 報告者へ差し戻しメールを送信（email が null でも member_id でAPI側がフォールバック）
+      // 報告者へ差し戻しメールを送信（レポートのmember_idから正しい記入者を取得）
+      const reportAuthor = allMembers.find((m) => m.id === selectedReport.member_id);
       fetch("/api/notify-returned", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           memberId: selectedReport.member_id,
-          memberEmail: viewingMember?.email ?? null,
+          memberEmail: reportAuthor?.email ?? null,
           memberName: selectedReport.member_name,
           month: selectedReport.month,
           project: selectedReport.project,
