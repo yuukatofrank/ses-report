@@ -280,9 +280,8 @@ function HomeContent() {
     }
   };
 
-  const handleReviewReport = async () => {
+  const handleReviewReport = async (comment?: string) => {
     if (!selectedReport) return;
-    if (!confirm(`${selectedReport.member_name}さんの月次報告を確認済みにしますか？`)) return;
     const res = await fetch(`/api/reports/${selectedReport.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -305,6 +304,7 @@ function HomeContent() {
             memberName: selectedReport.member_name,
             month: selectedReport.month,
             project: selectedReport.project,
+            comment: comment || null,
             reportUrl: `${window.location.origin}?report_id=${selectedReport.id}`,
           }),
         }).catch(console.error);

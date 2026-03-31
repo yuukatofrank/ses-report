@@ -10,7 +10,7 @@ function formatMonth(month: string): string {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { memberEmail, memberName, month, project, reportUrl } = body;
+  const { memberEmail, memberName, month, project, comment, reportUrl } = body;
 
   if (!memberEmail || !memberName || !month) {
     return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
@@ -58,6 +58,11 @@ export async function POST(request: Request) {
         <span>📅 報告月：${monthLabel}</span>
         <span>✅ ステータス：確認済み</span>
       </div>
+      ${comment ? `
+      <div style="background: #f0faf7; border-left: 3px solid #0f6e56; border-radius: 6px; padding: 14px 18px; margin-bottom: 24px;">
+        <p style="font-size: 12px; font-weight: bold; color: #0f6e56; margin: 0 0 6px;">確認者コメント</p>
+        <p style="font-size: 14px; color: #333; margin: 0; white-space: pre-wrap;">${comment}</p>
+      </div>` : ""}
       ${reportUrl ? `
       <div class="btn-wrap">
         <a href="${reportUrl}" class="btn">📄 報告書を確認する</a>

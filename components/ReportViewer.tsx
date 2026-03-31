@@ -8,7 +8,7 @@ interface ReportViewerProps {
   report: Report;
   onEdit?: () => void;
   onSubmit?: () => Promise<void>;
-  onReview?: () => Promise<void>;
+  onReview?: (comment?: string) => Promise<void>;
   onReturn?: (reason?: string) => Promise<void>;
   isAdmin?: boolean;
   isSuperAdmin?: boolean; // 最高権限ユーザー（NEXT_PUBLIC_ADMIN_EMAIL）のみtrue
@@ -45,6 +45,8 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
   const isReviewed = report.status === "reviewed";
   const isReturned = report.status === "returned";
   const [reviewing, setReviewing] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewComment, setReviewComment] = useState("");
 
   // 差し戻しモーダル
   const [showReturnModal, setShowReturnModal] = useState(false);
@@ -284,15 +286,11 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
             {/* 確認済みにするボタン（admin向け・提出済みのみ） */}
             {isAdmin && isSubmitted && onReview && (
               <button
-                onClick={async () => {
-                  setReviewing(true);
-                  try { await onReview(); } finally { setReviewing(false); }
-                }}
-                disabled={reviewing}
+                onClick={() => { setReviewComment(""); setShowReviewModal(true); }}
                 className="flex items-center gap-1.5 bg-[#0f6e56] text-white px-3 py-1.5
-                           rounded-lg text-sm font-medium hover:bg-[#0d5f49] transition-colors disabled:opacity-50"
+                           rounded-lg text-sm font-medium hover:bg-[#0d5f49] transition-colors"
               >
-                {reviewing ? "処理中..." : "✓ 確認済みにする"}
+                ✓ 確認済みにする
               </button>
             )}
 
@@ -591,6 +589,55 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
                            font-medium hover:bg-orange-600 transition-colors disabled:opacity-50"
               >
                 {returning ? "処理中..." : "↩ 差し戻す"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 確認済みモーダル */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h2 className="text-base font-bold text-gray-800 mb-1">確認済みにする</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              {report.member_name}さんの{formatMonth(report.month)}分の月報を確認済みにします
+            </p>
+            <div>
+              <label className="label">コメント（任意）</label>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                className="input-field w-full resize-y"
+                rows={3}
+                placeholder="フィードバックやコメントがあれば記入してください..."
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="btn-secondary flex-1"
+                disabled={reviewing}
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={async () => {
+                  if (!onReview) return;
+                  setReviewing(true);
+                  try {
+                    await onReview(reviewComment.trim() || undefined);
+                    setShowReviewModal(false);
+                  } finally {
+                    setReviewing(false);
+                  }
+                }}
+                disabled={reviewing}
+                className="flex-1 bg-[#0f6e56] text-white py-2 px-4 rounded-lg text-sm
+                           font-medium hover:bg-[#0d5f49] transition-colors disabled:opacity-50"
+              >
+                {reviewing ? "処理中..." : "✓ 確認済みにする"}
               </button>
             </div>
           </div>
