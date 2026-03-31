@@ -356,9 +356,9 @@ function HomeContent() {
       />
 
       {/* メインエリア */}
-      <main className="min-h-screen overflow-y-auto pt-[56px] md:ml-[260px]">
+      <main className="min-h-screen overflow-y-auto md:ml-[260px]" style={{ paddingTop: "var(--header-total)" }}>
         {viewMode === "idle" && (
-          <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] text-gray-400 px-4 text-center">
+          <div className="flex flex-col items-center justify-center text-gray-400 px-4 text-center" style={{ minHeight: "calc(100vh - var(--header-total))" }}>
             <div className="text-5xl mb-4">📋</div>
             <p className="text-base md:text-lg font-medium">
               {member

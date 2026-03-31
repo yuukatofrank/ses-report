@@ -71,6 +71,7 @@ export default function ExpenseList({
       {isOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          style={{ top: "var(--header-total)" }}
           onClick={onClose}
         />
       )}
@@ -78,12 +79,12 @@ export default function ExpenseList({
       {/* Sidebar */}
       <aside
         className={`
-          fixed left-0 top-[56px] bottom-0 z-40 flex flex-col border-r border-gray-200 bg-white overflow-hidden
+          fixed left-0 bottom-0 z-40 flex flex-col border-r border-gray-200 bg-white overflow-hidden
           transition-transform duration-300
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
         `}
-        style={{ width: "260px" }}
+        style={{ width: "260px", top: "var(--header-total)" }}
       >
         {/* New report button */}
         <div className="p-3 border-b border-gray-100 space-y-2">

@@ -7,6 +7,12 @@
   --brand-accent: #0f6e56;
   --brand-accent-light: #138a6b;
   --brand-bg: #f7f7f5;
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --header-h: 56px;
+  --header-total: calc(var(--header-h) + var(--sat));
 }
 
 body {

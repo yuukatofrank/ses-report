@@ -55,7 +55,7 @@ export default function InvoiceList({ invoices, selectedId, onSelect, onBulkCrea
   const visibleInvoices = grouped.flatMap((g) => openMonths.has(g.ym) ? g.items : []);
 
   return (
-    <aside className="fixed top-[56px] left-0 bottom-0 w-[260px] bg-white border-r border-gray-200 flex-col z-30 hidden md:flex">
+    <aside className="fixed left-0 bottom-0 w-[260px] bg-white border-r border-gray-200 flex-col z-30 hidden md:flex" style={{ top: "var(--header-total)" }}>
       <div className="p-3 border-b border-gray-100 space-y-2">
         <button onClick={onBulkCreate} className="btn-primary w-full text-sm">一括請求書作成</button>
         {checkedIds.length > 0 ? (

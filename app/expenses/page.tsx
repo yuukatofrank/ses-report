@@ -358,83 +358,85 @@ function ExpensesContent() {
     <div className="min-h-screen" style={{ backgroundColor: "#f7f7f5" }}>
       {/* Header */}
       <div
-        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-6 gap-3"
-        style={{ backgroundColor: "#1a1a2e", height: "56px" }}
+        className="fixed top-0 left-0 right-0 z-40"
+        style={{ backgroundColor: "#1a1a2e", paddingTop: "var(--sat)" }}
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden text-white p-1 rounded hover:bg-white/10 transition-colors"
-            aria-label="メニュー"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <h1 className="text-white font-bold text-base md:text-lg whitespace-nowrap">
-            経費申請
-          </h1>
-          <button
-            onClick={() => router.push("/")}
-            className="text-white/70 hover:text-white text-xs md:text-sm border border-white/20 px-2 md:px-3 py-1 rounded-lg hover:bg-white/10 transition-colors whitespace-nowrap"
-          >
-            ← 月報に戻る
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1.5 md:gap-3 overflow-x-auto flex-shrink-0">
-          {/* Month filter */}
-          <select
-            value={selectedMonth}
-            onChange={(e) => handleMonthChange(e.target.value)}
-            className="text-xs md:text-sm bg-white/10 text-white border border-white/20 rounded-lg px-1.5 md:px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40 min-w-0"
-          >
-            {monthOptions.map((m) => (
-              <option key={m} value={m} className="text-gray-800">
-                {fmtMonth(m)}
-              </option>
-            ))}
-          </select>
-
-          {/* Member filter (admin only) */}
-          {isSuperAdmin && (
-            <select
-              value={filterMemberId}
-              onChange={(e) => handleMemberFilterChange(e.target.value)}
-              className="text-xs md:text-sm bg-white/10 text-white border border-white/20 rounded-lg px-1.5 md:px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40 min-w-0 max-w-[100px] md:max-w-none"
+        <div className="flex items-center justify-between px-3 md:px-6 gap-2" style={{ height: "var(--header-h)" }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden text-white p-1 rounded hover:bg-white/10 transition-colors flex-shrink-0"
+              aria-label="メニュー"
             >
-              <option value="all" className="text-gray-800">
-                全員
-              </option>
-              {allMembers.map((m) => (
-                <option key={m.id} value={m.id} className="text-gray-800">
-                  {m.name}
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <h1 className="text-white font-bold text-sm md:text-lg whitespace-nowrap">
+              経費申請
+            </h1>
+            <button
+              onClick={() => router.push("/")}
+              className="hidden md:inline-flex text-white/70 hover:text-white text-sm border border-white/20 px-3 py-1 rounded-lg hover:bg-white/10 transition-colors whitespace-nowrap"
+            >
+              ← 月報に戻る
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 md:gap-3 flex-shrink-0">
+            {/* Month filter */}
+            <select
+              value={selectedMonth}
+              onChange={(e) => handleMonthChange(e.target.value)}
+              className="text-xs md:text-sm bg-white/10 text-white border border-white/20 rounded-lg px-1.5 md:px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40 min-w-0"
+            >
+              {monthOptions.map((m) => (
+                <option key={m} value={m} className="text-gray-800">
+                  {fmtMonth(m)}
                 </option>
               ))}
             </select>
-          )}
 
-          {/* PDF download button */}
-          <button
-            onClick={handlePrintPdf}
-            title="PDF出力"
-            className="text-white/70 hover:text-white border border-white/20 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+            {/* Member filter (admin only) */}
+            {isSuperAdmin && (
+              <select
+                value={filterMemberId}
+                onChange={(e) => handleMemberFilterChange(e.target.value)}
+                className="text-xs md:text-sm bg-white/10 text-white border border-white/20 rounded-lg px-1.5 md:px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/40 min-w-0 max-w-[80px] md:max-w-none"
+              >
+                <option value="all" className="text-gray-800">
+                  全員
+                </option>
+                {allMembers.map((m) => (
+                  <option key={m.id} value={m.id} className="text-gray-800">
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Back button (mobile) */}
+            <button
+              onClick={() => router.push("/")}
+              title="月報に戻る"
+              className="md:hidden text-white/70 hover:text-white border border-white/20 p-1.5 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-              />
-            </svg>
-          </button>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+
+            {/* PDF download button */}
+            <button
+              onClick={handlePrintPdf}
+              title="PDF出力"
+              className="text-white/70 hover:text-white border border-white/20 p-1.5 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -450,9 +452,9 @@ function ExpensesContent() {
       />
 
       {/* Main content */}
-      <main className="pt-[56px] md:ml-[260px] min-h-screen">
+      <main className="md:ml-[260px] min-h-screen" style={{ paddingTop: "var(--header-total)" }}>
         {viewMode === "idle" && (
-          <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] text-gray-400 px-4 text-center">
+          <div className="flex flex-col items-center justify-center text-gray-400 px-4 text-center" style={{ minHeight: "calc(100vh - var(--header-total))" }}>
             <div className="text-5xl mb-4">💰</div>
             <p className="text-base font-medium">
               経費を選択するか、新規申請してください

@@ -94,11 +94,13 @@ export default function InvoicesPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f7f7f5" }}>
-      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 md:px-6" style={{ backgroundColor: "#1a1a2e", height: "56px" }}>
-        <h1 className="text-white font-bold text-base md:text-lg">frankSQUARE管理システム — 請求書</h1>
-        <button onClick={() => router.push("/")} className="text-white/70 hover:text-white text-sm border border-white/20 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
-          ← 月報画面へ
-        </button>
+      <div className="fixed top-0 left-0 right-0 z-40" style={{ backgroundColor: "#1a1a2e", paddingTop: "var(--sat)" }}>
+        <div className="flex items-center justify-between px-3 md:px-6" style={{ height: "var(--header-h)" }}>
+          <h1 className="text-white font-bold text-sm md:text-lg truncate">請求書管理</h1>
+          <button onClick={() => router.push("/")} className="text-white/70 hover:text-white text-xs md:text-sm border border-white/20 px-2 md:px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors whitespace-nowrap">
+            ← 月報へ
+          </button>
+        </div>
       </div>
 
       <InvoiceList
@@ -112,9 +114,9 @@ export default function InvoicesPage() {
         onBulkPdf={handleBulkPdf}
       />
 
-      <main className="pt-[56px] md:ml-[260px] min-h-screen">
+      <main className="md:ml-[260px] min-h-screen" style={{ paddingTop: "var(--header-total)" }}>
         {viewMode === "idle" && (
-          <div className="flex flex-col items-center justify-center h-[calc(100vh-56px)] text-gray-400 px-4 text-center">
+          <div className="flex flex-col items-center justify-center text-gray-400 px-4 text-center" style={{ minHeight: "calc(100vh - var(--header-total))" }}>
             <div className="text-5xl mb-4">🧾</div>
             <p className="text-base font-medium">請求書を選択するか、一括作成してください</p>
             <button onClick={() => setShowBulk(true)} className="mt-4 btn-primary text-sm">一括請求書作成</button>

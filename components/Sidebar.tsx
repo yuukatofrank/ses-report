@@ -92,6 +92,7 @@ export default function Sidebar({
       {isOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          style={{ top: "var(--header-total)" }}
           onClick={onClose}
         />
       )}
@@ -99,12 +100,12 @@ export default function Sidebar({
       {/* サイドバー本体 */}
       <aside
         className={`
-          fixed left-0 top-[56px] bottom-0 z-40 flex flex-col border-r border-gray-200 bg-white overflow-hidden
+          fixed left-0 bottom-0 z-40 flex flex-col border-r border-gray-200 bg-white overflow-hidden
           transition-transform duration-300
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
         `}
-        style={{ width: "260px" }}
+        style={{ width: "260px", top: "var(--header-total)" }}
       >
         {/* 管理者用タブ */}
         {isAdmin && onChangeViewTab && (
