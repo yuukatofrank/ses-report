@@ -107,7 +107,7 @@ export interface ExpenseReport {
   member_id: string;
   member_name: string;
   month: string;
-  status: "draft" | "submitted" | "approved" | "returned";
+  status: "draft" | "submitted" | "approved" | "returned" | "no_expense";
   admin_comment: string | null;
   created_at: string;
   updated_at: string;

@@ -7,6 +7,7 @@ interface ExpenseListProps {
   selectedReport: ExpenseReport | null;
   onSelectReport: (report: ExpenseReport) => void;
   onNewReport: () => void;
+  onNoExpense?: () => void;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -17,8 +18,9 @@ function statusBadge(status: ExpenseReport["status"]) {
     submitted: { bg: "bg-yellow-100 text-yellow-700", label: "申請中" },
     approved: { bg: "bg-green-100 text-green-700", label: "承認済" },
     returned: { bg: "bg-red-100 text-red-700", label: "差し戻し" },
+    no_expense: { bg: "bg-blue-100 text-blue-700", label: "申請なし" },
   } as const;
-  const { bg, label } = map[status];
+  const { bg, label } = map[status] ?? { bg: "bg-gray-200 text-gray-600", label: status };
   return (
     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${bg}`}>
       {label}
@@ -40,6 +42,7 @@ export default function ExpenseList({
   selectedReport,
   onSelectReport,
   onNewReport,
+  onNoExpense,
   isOpen,
   onClose,
 }: ExpenseListProps) {
@@ -54,6 +57,11 @@ export default function ExpenseList({
 
   const handleNewReport = () => {
     onNewReport();
+    onClose();
+  };
+
+  const handleNoExpense = () => {
+    onNoExpense?.();
     onClose();
   };
 
@@ -78,10 +86,15 @@ export default function ExpenseList({
         style={{ width: "260px" }}
       >
         {/* New report button */}
-        <div className="p-3 border-b border-gray-100">
+        <div className="p-3 border-b border-gray-100 space-y-2">
           <button onClick={handleNewReport} className="btn-primary w-full text-sm">
             + 新規申請
           </button>
+          {onNoExpense && (
+            <button onClick={handleNoExpense} className="btn-secondary w-full text-xs">
+              申請なし報告
+            </button>
+          )}
         </div>
 
         {/* Report list */}

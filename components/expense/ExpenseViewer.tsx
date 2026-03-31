@@ -19,8 +19,9 @@ function statusBadge(status: ExpenseReport["status"]) {
     submitted: { bg: "bg-yellow-100 text-yellow-700", label: "申請中" },
     approved: { bg: "bg-green-100 text-green-700", label: "承認済" },
     returned: { bg: "bg-red-100 text-red-700", label: "差し戻し" },
+    no_expense: { bg: "bg-blue-100 text-blue-700", label: "申請なし" },
   } as const;
-  const { bg, label } = map[status];
+  const { bg, label } = map[status] ?? { bg: "bg-gray-200 text-gray-600", label: status };
   return (
     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${bg}`}>
       {label}
@@ -123,7 +124,17 @@ export default function ExpenseViewer({
           </div>
         )}
 
+        {/* No expense message */}
+        {report.status === "no_expense" && (
+          <div className="card p-6 md:p-8 text-center">
+            <div className="text-3xl mb-3">-</div>
+            <p className="text-sm font-medium text-gray-600">該当月の経費申請はありません</p>
+            <p className="text-xs text-gray-400 mt-1">{report.member_name}さんが申請なしと報告しました</p>
+          </div>
+        )}
+
         {/* Items: Card layout for mobile, Table for desktop */}
+        {report.status !== "no_expense" && <>
         {/* Mobile card list */}
         <div className="md:hidden space-y-2">
           {items.map((item, idx) => (
@@ -231,6 +242,7 @@ export default function ExpenseViewer({
             </table>
           </div>
         </div>
+        </>}
 
         <p className="text-xs text-gray-400 text-right mt-3">
           更新: {new Date(report.updated_at).toLocaleDateString("ja-JP")}

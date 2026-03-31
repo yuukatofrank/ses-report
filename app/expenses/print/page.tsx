@@ -15,8 +15,8 @@ function formatDate(dateStr: string): string {
 }
 
 function statusLabel(status: ExpenseReport["status"]): string {
-  const map = { draft: "下書き", submitted: "申請中", approved: "承認済", returned: "差し戻し" };
-  return map[status];
+  const map: Record<string, string> = { draft: "下書き", submitted: "申請中", approved: "承認済", returned: "差し戻し", no_expense: "申請なし" };
+  return map[status] ?? status;
 }
 
 function ExpensePage({

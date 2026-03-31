@@ -148,6 +148,35 @@ function ExpensesContent() {
     setViewMode("form-new");
   };
 
+  const handleNoExpense = async () => {
+    if (!member) return;
+    if (!confirm(`${fmtMonth(selectedMonth)}の経費を「申請なし」として報告しますか？`)) return;
+    const res = await fetch("/api/expenses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        member_id: member.id,
+        member_name: member.name,
+        month: selectedMonth,
+        status: "no_expense",
+        items: [],
+      }),
+    });
+    if (res.ok) {
+      const saved = await res.json();
+      const mid = isSuperAdmin ? filterMemberId : member.id;
+      await fetchReports(mid, selectedMonth);
+      const detail = await fetchReportDetail(saved.id);
+      if (detail) {
+        setSelectedReport(detail);
+        setViewMode("view");
+      }
+    } else {
+      const err = await res.json();
+      alert(err.error || "報告に失敗しました");
+    }
+  };
+
   const handleSaveReport = async (
     data: { month: string; items: ExpenseItem[] },
     status: "draft" | "submitted"
@@ -415,6 +444,7 @@ function ExpensesContent() {
         selectedReport={selectedReport}
         onSelectReport={handleSelectReport}
         onNewReport={handleNewReport}
+        onNoExpense={!isSuperAdmin ? handleNoExpense : undefined}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
@@ -428,12 +458,20 @@ function ExpensesContent() {
               経費を選択するか、新規申請してください
             </p>
             {!isSuperAdmin && (
-              <button
-                onClick={handleNewReport}
-                className="mt-4 btn-primary text-sm"
-              >
-                + 新規申請
-              </button>
+              <div className="flex items-center gap-3 mt-4">
+                <button
+                  onClick={handleNewReport}
+                  className="btn-primary text-sm"
+                >
+                  + 新規申請
+                </button>
+                <button
+                  onClick={handleNoExpense}
+                  className="btn-secondary text-sm"
+                >
+                  申請なし
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -461,7 +499,7 @@ function ExpensesContent() {
           <ExpenseViewer
             report={selectedReport}
             onEdit={canEdit ? handleEditReport : undefined}
-            onDelete={canEdit || isSuperAdmin ? handleDeleteReport : undefined}
+            onDelete={canEdit || isSuperAdmin || (isOwnReport && selectedReport.status === "no_expense") ? handleDeleteReport : undefined}
             onApprove={
               isSuperAdmin && selectedReport.status === "submitted"
                 ? handleApproveReport
