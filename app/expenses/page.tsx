@@ -39,6 +39,7 @@ function ExpensesContent() {
   const [reports, setReports] = useState<ExpenseReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<ExpenseReport | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Filters
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
@@ -332,6 +333,15 @@ function ExpensesContent() {
         style={{ backgroundColor: "#1a1a2e", height: "56px" }}
       >
         <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="md:hidden text-white p-1 rounded hover:bg-white/10 transition-colors"
+            aria-label="メニュー"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
           <h1 className="text-white font-bold text-base md:text-lg whitespace-nowrap">
             経費申請
           </h1>
@@ -405,6 +415,8 @@ function ExpensesContent() {
         selectedReport={selectedReport}
         onSelectReport={handleSelectReport}
         onNewReport={handleNewReport}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
       {/* Main content */}

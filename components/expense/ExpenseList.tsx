@@ -1,12 +1,14 @@
 "use client";
 
-import { ExpenseReport, EXPENSE_CATEGORIES } from "@/types";
+import { ExpenseReport } from "@/types";
 
 interface ExpenseListProps {
   reports: ExpenseReport[];
   selectedReport: ExpenseReport | null;
   onSelectReport: (report: ExpenseReport) => void;
   onNewReport: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 function statusBadge(status: ExpenseReport["status"]) {
@@ -38,63 +40,94 @@ export default function ExpenseList({
   selectedReport,
   onSelectReport,
   onNewReport,
+  isOpen,
+  onClose,
 }: ExpenseListProps) {
   const sorted = [...reports].sort(
     (a, b) => b.updated_at.localeCompare(a.updated_at)
   );
 
+  const handleSelectReport = (report: ExpenseReport) => {
+    onSelectReport(report);
+    onClose();
+  };
+
+  const handleNewReport = () => {
+    onNewReport();
+    onClose();
+  };
+
   return (
-    <aside className="fixed top-[56px] left-0 bottom-0 w-[260px] bg-white border-r border-gray-200 flex-col z-30 hidden md:flex">
-      {/* New report button */}
-      <div className="p-3 border-b border-gray-100">
-        <button onClick={onNewReport} className="btn-primary w-full text-sm">
-          + 新規申請
-        </button>
-      </div>
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={onClose}
+        />
+      )}
 
-      {/* Report list */}
-      <div className="flex-1 overflow-y-auto">
-        {reports.length === 0 ? (
-          <p className="text-xs text-gray-400 text-center mt-10 px-4">
-            経費申請がまだありません
-          </p>
-        ) : (
-          <ul className="py-1">
-            {sorted.map((report) => {
-              const itemCount = report.items?.length ?? 0;
-              const total = totalAmount(report);
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed left-0 top-[56px] bottom-0 z-40 flex flex-col border-r border-gray-200 bg-white overflow-hidden
+          transition-transform duration-300
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
+        `}
+        style={{ width: "260px" }}
+      >
+        {/* New report button */}
+        <div className="p-3 border-b border-gray-100">
+          <button onClick={handleNewReport} className="btn-primary w-full text-sm">
+            + 新規申請
+          </button>
+        </div>
 
-              return (
-                <li key={report.id}>
-                  <button
-                    onClick={() => onSelectReport(report)}
-                    className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0
-                      ${selectedReport?.id === report.id ? "bg-[#f0faf7] border-l-2 border-l-[#0f6e56]" : ""}`}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <span className="text-xs text-gray-500 font-medium">
-                        {fmtMonth(report.month)}
-                      </span>
-                      {statusBadge(report.status)}
-                    </div>
-                    <p className="text-sm text-gray-700 truncate">
-                      {report.member_name}
-                    </p>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[10px] text-gray-400">
-                        {itemCount}件
-                      </span>
-                      <span className="text-xs font-medium text-[#0f6e56]">
-                        ¥{total.toLocaleString()}
-                      </span>
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-    </aside>
+        {/* Report list */}
+        <div className="flex-1 overflow-y-auto">
+          {reports.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center mt-10 px-4">
+              経費申請がまだありません
+            </p>
+          ) : (
+            <ul className="py-1">
+              {sorted.map((report) => {
+                const itemCount = report.items?.length ?? 0;
+                const total = totalAmount(report);
+
+                return (
+                  <li key={report.id}>
+                    <button
+                      onClick={() => handleSelectReport(report)}
+                      className={`w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0
+                        ${selectedReport?.id === report.id ? "bg-[#f0faf7] border-l-2 border-l-[#0f6e56]" : ""}`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <span className="text-xs text-gray-500 font-medium">
+                          {fmtMonth(report.month)}
+                        </span>
+                        {statusBadge(report.status)}
+                      </div>
+                      <p className="text-sm text-gray-700 truncate">
+                        {report.member_name}
+                      </p>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="text-[10px] text-gray-400">
+                          {itemCount}件
+                        </span>
+                        <span className="text-xs font-medium text-[#0f6e56]">
+                          ¥{total.toLocaleString()}
+                        </span>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }
