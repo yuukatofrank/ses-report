@@ -10,7 +10,7 @@ function formatMonth(month: string): string {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { memberName, month, itemCount, totalAmount, expenseUrl } = body;
+  const { memberName, month, itemCount, totalAmount, expenseUrl, noExpense } = body;
 
   if (!memberName || !month) {
     return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
@@ -48,15 +48,17 @@ export async function POST(request: Request) {
   <div class="wrapper">
     <div class="header">
       <h1>frankSQUARE経費申請</h1>
-      <h2>${memberName}さんから経費申請が届きました</h2>
-      <span class="badge">📋 ${monthLabel}分</span>
+      <h2>${memberName}さんから${noExpense ? "「申請なし」報告" : "経費申請"}が届きました</h2>
+      <span class="badge">${noExpense ? "📭" : "📋"} ${monthLabel}分</span>
     </div>
     <div class="body">
       <div class="meta">
         <span>👤 申請者：${memberName}</span>
         <span>📅 対象月：${monthLabel}</span>
-        <span>📝 明細件数：${itemCount ?? 0}件</span>
-        <span>💰 合計金額：¥${amountStr}</span>
+        ${noExpense
+          ? '<span>📭 該当月の経費申請はありません</span>'
+          : `<span>📝 明細件数：${itemCount ?? 0}件</span>
+        <span>💰 合計金額：¥${amountStr}</span>`}
       </div>
       ${expenseUrl ? `<div class="btn-wrap"><a href="${expenseUrl}" class="btn">経費申請を確認する</a></div>` : ""}
     </div>
@@ -72,7 +74,9 @@ export async function POST(request: Request) {
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "noreply@franksquare.co.jp",
       to: adminEmail,
-      subject: `【経費申請】${memberName}さん ${monthLabel}分`,
+      subject: noExpense
+        ? `【経費申請なし】${memberName}さん ${monthLabel}分`
+        : `【経費申請】${memberName}さん ${monthLabel}分`,
       html,
     });
 

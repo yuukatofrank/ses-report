@@ -171,6 +171,19 @@ function ExpensesContent() {
         setSelectedReport(detail);
         setViewMode("view");
       }
+      // Notify admin
+      fetch("/api/expenses/notify-submitted", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberName: member.name,
+          month: selectedMonth,
+          itemCount: 0,
+          totalAmount: 0,
+          noExpense: true,
+          expenseUrl: `${window.location.origin}/expenses`,
+        }),
+      }).catch(console.error);
     } else {
       const err = await res.json();
       alert(err.error || "報告に失敗しました");
