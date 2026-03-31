@@ -172,6 +172,21 @@ function ExpensesContent() {
           setSelectedReport(detail);
           setViewMode("view");
         }
+        // Send notification email when submitted
+        if (status === "submitted") {
+          const totalAmount = data.items.reduce((sum, item) => sum + item.amount, 0);
+          fetch("/api/expenses/notify-submitted", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              memberName: member.name,
+              month: data.month,
+              itemCount: data.items.length,
+              totalAmount,
+              expenseUrl: `${window.location.origin}/expenses`,
+            }),
+          }).catch(console.error);
+        }
       } else {
         const err = await res.json();
         alert(err.error || "保存に失敗しました");
@@ -194,6 +209,21 @@ function ExpensesContent() {
         if (detail) {
           setSelectedReport(detail);
           setViewMode("view");
+        }
+        // Send notification email when submitted
+        if (status === "submitted" && member) {
+          const totalAmount = data.items.reduce((sum, item) => sum + item.amount, 0);
+          fetch("/api/expenses/notify-submitted", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              memberName: member.name,
+              month: data.month,
+              itemCount: data.items.length,
+              totalAmount,
+              expenseUrl: `${window.location.origin}/expenses`,
+            }),
+          }).catch(console.error);
         }
       } else {
         alert("更新に失敗しました");
@@ -248,6 +278,18 @@ function ExpensesContent() {
       await fetchReports(filterMemberId, selectedMonth);
       const detail = await fetchReportDetail(selectedReport.id);
       if (detail) setSelectedReport(detail);
+      // Send return notification email to the submitter
+      fetch("/api/expenses/notify-returned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: selectedReport.member_id,
+          memberName: selectedReport.member_name,
+          month: selectedReport.month,
+          reason: comment || null,
+          expenseUrl: `${window.location.origin}/expenses`,
+        }),
+      }).catch(console.error);
     }
   };
 
