@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
@@ -8,6 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const supabase = createSupabaseAdminClient();
 
   const { data: report, error } = await supabase
     .from("expense_reports")
@@ -38,6 +39,7 @@ export async function PUT(
 ) {
   const { id } = await params;
   const body = await request.json();
+  const supabase = createSupabaseAdminClient();
 
   // Admin check for status changes to 'approved' or 'returned'
   if (body.status === "approved" || body.status === "returned") {
@@ -152,6 +154,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const supabase = createSupabaseAdminClient();
 
   // Cascade delete: items are deleted via FK cascade in DB,
   // but explicitly delete for safety

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const memberId = searchParams.get("member_id");
   const month = searchParams.get("month");
 
+  const supabase = createSupabaseAdminClient();
   let query = supabase
     .from("expense_reports")
     .select("*")
@@ -64,6 +65,8 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+
+  const supabase = createSupabaseAdminClient();
 
   // Insert expense_report
   const { data: report, error: reportError } = await supabase
