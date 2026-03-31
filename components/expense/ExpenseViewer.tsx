@@ -116,7 +116,7 @@ export default function ExpenseViewer({
             )}
 
             {/* Delete */}
-            {canOwnerEdit && onDelete && (
+            {onDelete && (
               <button
                 onClick={async () => {
                   if (!confirm("この経費申請を削除しますか？")) return;
