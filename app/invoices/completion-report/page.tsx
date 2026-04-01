@@ -197,21 +197,6 @@ function CompletionReportContent() {
           </tbody>
         </table>
 
-        {/* 作業責任者 */}
-        <div style={{ marginTop: 30 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10 }}>
-            <tbody>
-              <tr>
-                <td style={{ border: "1px solid #000", padding: "6px 10px", fontWeight: "bold", width: "18%", backgroundColor: "#f0f0f0", verticalAlign: "middle" }}>
-                  作業責任者
-                </td>
-                <td style={{ border: "1px solid #000", padding: "6px 10px", verticalAlign: "middle" }}>
-                  {workerName}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </div>
     </>
   );
