@@ -79,7 +79,7 @@ export interface InvoiceItem {
 }
 
 // 経費申請
-export type ExpenseCategory = "transportation" | "accommodation" | "supplies" | "communication" | "entertainment" | "education" | "other";
+export type ExpenseCategory = "transportation" | "accommodation" | "supplies" | "communication" | "entertainment" | "meeting" | "education" | "other";
 
 export const EXPENSE_CATEGORIES: Record<ExpenseCategory, string> = {
   transportation: "交通費",
@@ -87,6 +87,7 @@ export const EXPENSE_CATEGORIES: Record<ExpenseCategory, string> = {
   supplies: "備品・消耗品",
   communication: "通信費",
   entertainment: "接待交際費",
+  meeting: "社員MTG",
   education: "書籍・研修費",
   other: "その他",
 };
