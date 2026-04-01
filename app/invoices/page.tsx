@@ -54,10 +54,15 @@ export default function InvoicesPage() {
   };
 
   const handleBulkCreated = async (created: Invoice[]) => {
-    await fetchInvoices();
+    const res = await fetch("/api/invoices");
+    const all: Invoice[] = res.ok ? await res.json() : [];
+    setInvoices(all);
     setShowBulk(false);
-    if (created.length === 1) { setSelected(created[0]); setViewMode("view"); }
-    else { setSelected(null); setViewMode("idle"); }
+    if (created.length === 1) {
+      const full = all.find((i) => i.id === created[0].id);
+      setSelected(full ?? created[0]);
+      setViewMode("view");
+    } else { setSelected(null); setViewMode("idle"); }
   };
 
   const handleSelect = (invoice: Invoice) => { setSelected(invoice); setViewMode("view"); };
@@ -201,9 +206,9 @@ export default function InvoicesPage() {
 
       {showBulk && <BulkInvoiceCreator onCreated={handleBulkCreated} onClose={() => setShowBulk(false)} />}
       {showMaster && <ContractManager onClose={() => setShowMaster(false)} />}
-      {showCompletion && selected?.contract && (
+      {showCompletion && selected && (
         <CompletionReportModal
-          contractId={selected.contract.id}
+          contractId={selected.contract?.id ?? selected.contract_id}
           targetMonth={selected.target_month}
           clientName={(selected.contract?.client as Client | undefined)?.name ?? ""}
           workerName={(selected.contract?.member as { name: string } | undefined)?.name ?? ""}
