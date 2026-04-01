@@ -60,9 +60,12 @@ function CompletionReportContent() {
 
   const vars = { project: contract.project_name, worker: workerName, month: `${month}月`, client: clientName };
 
-  const taskName = contract.task_description
+  // 受託業務名 = 案件名（project_name）
+  const projectName = contract.project_name;
+  // 受託業務内容 = task_description（変数展開）or 案件名
+  const taskDetail = contract.task_description
     ? expandVars(contract.task_description, vars)
-    : contract.project_name;
+    : projectName;
 
   const orderNumber = contract.order_number ?? "";
 
@@ -149,7 +152,7 @@ function CompletionReportContent() {
                 受託業務名
               </td>
               <td style={{ border: "1px solid #000", padding: "6px 10px", fontWeight: "bold", verticalAlign: "middle" }}>
-                {taskName}
+                {projectName}
               </td>
             </tr>
 
@@ -165,7 +168,7 @@ function CompletionReportContent() {
               <td colSpan={2} style={{ border: "1px solid #000", padding: "12px 10px", lineHeight: 1.8, verticalAlign: "top", whiteSpace: "pre-wrap", minHeight: 200 }}>
                 <div style={{ marginBottom: 12 }}>
                   <div>(1)受託業務内容</div>
-                  <div style={{ paddingLeft: 24 }}>{taskName}に準ずる業務</div>
+                  <div style={{ paddingLeft: 24 }}>{taskDetail}に準ずる業務</div>
                 </div>
                 <div style={{ marginBottom: 12 }}>
                   <div>(2)作業実績報告</div>
