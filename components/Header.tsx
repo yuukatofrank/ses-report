@@ -86,14 +86,17 @@ export default function Header({ member, onEditProfile, onToggleSidebar }: Heade
             >
               管理
             </button>
-            <button
-              onClick={() => router.push("/tools/pdf-merge")}
-              className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
-                         font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
-            >
-              PDF結合
-            </button>
           </>
+        )}
+
+        {member && (
+          <button
+            onClick={() => router.push("/tools/pdf-merge")}
+            className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
+                       font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
+          >
+            PDF結合
+          </button>
         )}
 
         <button
