@@ -26,47 +26,20 @@ export default function CompletionReportModal({
 }: Props) {
   const [reportDate, setReportDate] = useState(new Date().toISOString().split("T")[0]);
   const [totalHours, setTotalHours] = useState("");
-  const [generating, setGenerating] = useState(false);
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (!totalHours) {
       alert("総労働時間を入力してください");
       return;
     }
-    setGenerating(true);
-    try {
-      const res = await fetch("/api/completion-report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contract_id: contractId,
-          target_month: targetMonth,
-          report_date: reportDate,
-          total_hours: parseFloat(totalHours),
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "生成に失敗しました");
-        return;
-      }
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const disposition = res.headers.get("Content-Disposition");
-      const filenameMatch = disposition?.match(/filename\*=UTF-8''(.+)/);
-      a.download = filenameMatch ? decodeURIComponent(filenameMatch[1]) : `業務終了報告書_${workerName}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      onClose();
-    } finally {
-      setGenerating(false);
-    }
+    const params = new URLSearchParams({
+      contract_id: contractId,
+      target_month: targetMonth,
+      report_date: reportDate,
+      total_hours: totalHours,
+    });
+    window.open(`/invoices/completion-report?${params.toString()}`, "_blank");
+    onClose();
   };
 
   return (
@@ -115,10 +88,10 @@ export default function CompletionReportModal({
           <button onClick={onClose} className="btn-secondary">キャンセル</button>
           <button
             onClick={handleGenerate}
-            disabled={!totalHours || generating}
+            disabled={!totalHours}
             className="btn-primary"
           >
-            {generating ? "生成中..." : "Excelダウンロード"}
+            PDF表示
           </button>
         </div>
       </div>
