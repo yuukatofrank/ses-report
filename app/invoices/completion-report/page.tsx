@@ -105,25 +105,32 @@ function CompletionReportContent() {
           <span style={{ fontSize: 20, fontWeight: "bold", marginLeft: 12 }}>({month}月)</span>
         </div>
 
-        {/* Company info - right aligned block */}
+        {/* Company info + stamps - right aligned */}
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-            <div style={{ textAlign: "left", fontSize: 10, lineHeight: 1.7 }}>
-              <div>{COMPANY.address1}</div>
-              <div>{COMPANY.address2}</div>
-              <div style={{ fontWeight: "bold", marginTop: 2 }}>{COMPANY.name}</div>
-              <div>{COMPANY.rep}</div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
+            {/* Address block with company stamp overlapping */}
+            <div style={{ position: "relative" }}>
+              <div style={{ textAlign: "center", fontSize: 10, lineHeight: 1.8 }}>
+                <div>{COMPANY.address1}</div>
+                <div>{COMPANY.address2}</div>
+                <div>{COMPANY.name}</div>
+                <div>{COMPANY.rep}</div>
+              </div>
+              {/* Company stamp - overlapping address */}
+              <div style={{ position: "absolute", top: 0, right: -30, width: 64, height: 64, border: "2.5px solid #c00", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", backgroundColor: "rgba(255,255,255,0.3)", transform: "rotate(-8deg)" }}>
+                <span style={{ color: "#c00", fontSize: 11, fontWeight: "bold", lineHeight: 1.2 }}>株式会社</span>
+                <span style={{ color: "#c00", fontSize: 10, fontWeight: "bold", lineHeight: 1.2 }}>frank</span>
+                <span style={{ color: "#c00", fontSize: 10, fontWeight: "bold", lineHeight: 1.2 }}>SQUARE</span>
+              </div>
             </div>
-            {/* Company stamp */}
-            <div style={{ width: 56, height: 56, border: "2px solid #c00", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", marginTop: 2, flexShrink: 0 }}>
-              <span style={{ color: "#c00", fontSize: 10, fontWeight: "bold", lineHeight: 1.2 }}>株式会社</span>
-              <span style={{ color: "#c00", fontSize: 9, fontWeight: "bold", lineHeight: 1.2 }}>frank</span>
-              <span style={{ color: "#c00", fontSize: 9, fontWeight: "bold", lineHeight: 1.2 }}>SQUARE</span>
-            </div>
-            {/* Personal stamp */}
-            <div style={{ width: 36, height: 36, border: "2px solid #c00", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", marginTop: 12, flexShrink: 0 }}>
-              <span style={{ color: "#c00", fontSize: 11, fontWeight: "bold", lineHeight: 1.1 }}>加</span>
-              <span style={{ color: "#c00", fontSize: 11, fontWeight: "bold", lineHeight: 1.1 }}>藤</span>
+
+            {/* 作業責任者印 box */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginLeft: 16 }}>
+              <div style={{ fontSize: 8, border: "1px solid #000", padding: "2px 8px", marginBottom: 4 }}>作業責任者印</div>
+              <div style={{ width: 44, height: 44, border: "2.5px solid #c00", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+                <span style={{ color: "#c00", fontSize: 14, fontWeight: "bold", lineHeight: 1.1 }}>加</span>
+                <span style={{ color: "#c00", fontSize: 14, fontWeight: "bold", lineHeight: 1.1 }}>藤</span>
+              </div>
             </div>
           </div>
         </div>
