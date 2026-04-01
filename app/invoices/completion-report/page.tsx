@@ -128,13 +128,13 @@ function CompletionReportContent() {
           {/* Company stamp - overlapping address, top-right area */}
           <div style={{
             position: "absolute", top: -4, right: -8,
-            width: 66, height: 66, border: "2.5px solid #e08080", borderRadius: 6,
+            width: 66, height: 66, border: "2.5px solid #d05050", borderRadius: 6,
             display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
             backgroundColor: "rgba(255,255,255,0.3)",
           }}>
-            <span style={{ color: "#e08080", fontSize: 11, fontWeight: "bold", lineHeight: 1.2 }}>株式会社</span>
-            <span style={{ color: "#e08080", fontSize: 10, fontWeight: "bold", lineHeight: 1.2 }}>frank</span>
-            <span style={{ color: "#e08080", fontSize: 10, fontWeight: "bold", lineHeight: 1.2 }}>SQUARE</span>
+            <span style={{ color: "#d05050", fontSize: 11, fontWeight: "bold", lineHeight: 1.2 }}>株式会社</span>
+            <span style={{ color: "#d05050", fontSize: 10, fontWeight: "bold", lineHeight: 1.2 }}>frank</span>
+            <span style={{ color: "#d05050", fontSize: 10, fontWeight: "bold", lineHeight: 1.2 }}>SQUARE</span>
           </div>
         </div>
 
