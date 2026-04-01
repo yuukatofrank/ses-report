@@ -138,14 +138,6 @@ function ExpensePage({
         </table>
       </div>
 
-      {/* Admin comment */}
-      {report.admin_comment && (
-        <div style={{ border: "1px solid #f97316", borderRadius: "6px", padding: "12px 16px", marginBottom: "20px", fontSize: "11px" }}>
-          <p style={{ fontWeight: "bold", color: "#f97316", marginBottom: "4px", fontSize: "10px" }}>管理者コメント</p>
-          <p style={{ color: "#333", margin: 0, whiteSpace: "pre-wrap" }}>{report.admin_comment}</p>
-        </div>
-      )}
-
       {/* Approval section */}
       <div style={{ marginTop: "auto", paddingTop: "24px" }}>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "24px" }}>
