@@ -57,6 +57,8 @@ export interface Contract {
   client_id: string;
   member_id: string;
   project_name: string;
+  order_number: string | null; // 注文番号 (例: FSQ-C2509-10)
+  task_description: string | null; // 受託業務内容
   payment_month_offset: number;
   payment_day: number;
   active: boolean;

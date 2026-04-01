@@ -13,7 +13,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { client_id, member_id, project_name, payment_month_offset, payment_day, pdf_filename, items } = await request.json();
+  const { client_id, member_id, project_name, order_number, task_description, payment_month_offset, payment_day, pdf_filename, items } = await request.json();
 
   if (!client_id || !member_id || !project_name?.trim()) {
     return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
   const { data: contract, error } = await supabase
     .from("contracts")
-    .insert({ client_id, member_id, project_name: project_name.trim(), payment_month_offset: payment_month_offset ?? 1, payment_day: payment_day ?? 10, pdf_filename: pdf_filename ?? "" })
+    .insert({ client_id, member_id, project_name: project_name.trim(), order_number: order_number || null, task_description: task_description || null, payment_month_offset: payment_month_offset ?? 1, payment_day: payment_day ?? 10, pdf_filename: pdf_filename ?? "" })
     .select()
     .single();
 

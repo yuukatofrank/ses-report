@@ -26,6 +26,8 @@ export default function ContractManager({ onClose }: Props) {
   const [cClientId, setCClientId] = useState("");
   const [cMemberId, setCMemberId] = useState("");
   const [cProjectName, setCProjectName] = useState("");
+  const [cOrderNumber, setCOrderNumber] = useState("");
+  const [cTaskDescription, setCTaskDescription] = useState("");
   const [cOffset, setCOffset] = useState(1);
   const [cDay, setCDay] = useState(10);
   const [cPdfFilename, setCPdfFilename] = useState("");
@@ -59,7 +61,7 @@ export default function ContractManager({ onClose }: Props) {
   // ---- Contracts ----
   const openNewContract = () => {
     setEditingContract(null);
-    setCClientId(""); setCMemberId(""); setCProjectName(""); setCOffset(1); setCDay(10); setCPdfFilename(""); setCItems([EMPTY_ITEM()]);
+    setCClientId(""); setCMemberId(""); setCProjectName(""); setCOrderNumber(""); setCTaskDescription(""); setCOffset(1); setCDay(10); setCPdfFilename(""); setCItems([EMPTY_ITEM()]);
     setShowContractForm(true);
   };
 
@@ -68,6 +70,8 @@ export default function ContractManager({ onClose }: Props) {
     setCClientId(contract.client_id);
     setCMemberId(contract.member_id);
     setCProjectName(contract.project_name);
+    setCOrderNumber(contract.order_number ?? "");
+    setCTaskDescription(contract.task_description ?? "");
     setCOffset(contract.payment_month_offset);
     setCDay(contract.payment_day);
     setCPdfFilename(contract.pdf_filename ?? "");
@@ -84,7 +88,7 @@ export default function ContractManager({ onClose }: Props) {
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client_id: cClientId, member_id: cMemberId, project_name: cProjectName, payment_month_offset: cOffset, payment_day: cDay, pdf_filename: cPdfFilename, items: cItems }),
+      body: JSON.stringify({ client_id: cClientId, member_id: cMemberId, project_name: cProjectName, order_number: cOrderNumber || null, task_description: cTaskDescription || null, payment_month_offset: cOffset, payment_day: cDay, pdf_filename: cPdfFilename, items: cItems }),
     });
     if (res.ok) { setContracts(await fetch("/api/contracts").then((r) => r.json())); setShowContractForm(false); }
     setContractSaving(false);
@@ -181,6 +185,18 @@ export default function ContractManager({ onClose }: Props) {
                     <label className="label">案件名 *</label>
                     <input type="text" value={cProjectName} onChange={(e) => setCProjectName(e.target.value)}
                       placeholder="例：BRMS設計・開発支援" className="input-field" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">注文番号</label>
+                      <input type="text" value={cOrderNumber} onChange={(e) => setCOrderNumber(e.target.value)}
+                        placeholder="例：FSQ-C2509-10" className="input-field" />
+                    </div>
+                    <div>
+                      <label className="label">受託業務内容</label>
+                      <input type="text" value={cTaskDescription} onChange={(e) => setCTaskDescription(e.target.value)}
+                        placeholder="例：システム運用オペレーション業務" className="input-field" />
+                    </div>
                   </div>
                   <div className="flex gap-3">
                     <div className="flex-1">

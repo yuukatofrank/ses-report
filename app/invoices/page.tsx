@@ -9,6 +9,8 @@ import InvoiceForm from "@/components/invoice/InvoiceForm";
 import BulkInvoiceCreator from "@/components/invoice/BulkInvoiceCreator";
 import ContractManager from "@/components/invoice/ContractManager";
 
+import CompletionReportModal from "@/components/invoice/CompletionReportModal";
+
 type ViewMode = "idle" | "edit" | "view";
 
 function calcTotal(invoice: Invoice): number {
@@ -33,6 +35,7 @@ export default function InvoicesPage() {
   const [showBulk, setShowBulk] = useState(false);
   const [showMaster, setShowMaster] = useState(false);
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
+  const [showCompletion, setShowCompletion] = useState(false);
 
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
@@ -142,6 +145,7 @@ export default function InvoicesPage() {
                 </p>
               </div>
               <div className="flex gap-2">
+                <button onClick={() => setShowCompletion(true)} className="btn-secondary text-sm">業務終了報告書</button>
                 <button onClick={() => window.open(`/invoices/${selected.id}/print`, "_blank")} className="btn-secondary text-sm">印刷 / PDF</button>
                 <button onClick={() => setViewMode("edit")} className="btn-primary text-sm">編集</button>
               </div>
@@ -197,6 +201,16 @@ export default function InvoicesPage() {
 
       {showBulk && <BulkInvoiceCreator onCreated={handleBulkCreated} onClose={() => setShowBulk(false)} />}
       {showMaster && <ContractManager onClose={() => setShowMaster(false)} />}
+      {showCompletion && selected?.contract && (
+        <CompletionReportModal
+          contractId={selected.contract.id}
+          targetMonth={selected.target_month}
+          clientName={(selected.contract?.client as Client | undefined)?.name ?? ""}
+          workerName={(selected.contract?.member as { name: string } | undefined)?.name ?? ""}
+          projectName={selected.contract?.project_name ?? ""}
+          onClose={() => setShowCompletion(false)}
+        />
+      )}
     </div>
   );
 }

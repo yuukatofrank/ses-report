@@ -4,11 +4,11 @@ import { ContractItem } from "@/types";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { client_id, member_id, project_name, payment_month_offset, payment_day, active, pdf_filename, items } = await request.json();
+  const { client_id, member_id, project_name, order_number, task_description, payment_month_offset, payment_day, active, pdf_filename, items } = await request.json();
 
   const { error } = await supabase
     .from("contracts")
-    .update({ client_id, member_id, project_name: project_name?.trim(), payment_month_offset, payment_day, active, pdf_filename: pdf_filename ?? "", updated_at: new Date().toISOString() })
+    .update({ client_id, member_id, project_name: project_name?.trim(), order_number: order_number ?? null, task_description: task_description ?? null, payment_month_offset, payment_day, active, pdf_filename: pdf_filename ?? "", updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
