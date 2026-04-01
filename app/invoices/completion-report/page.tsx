@@ -130,7 +130,7 @@ function CompletionReportContent() {
             position: "absolute", top: -4, right: -8,
             width: 66, height: 66, border: "2.5px solid #c00", borderRadius: 6,
             display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
-            backgroundColor: "rgba(255,255,255,0.3)", transform: "rotate(-10deg)",
+            backgroundColor: "rgba(255,255,255,0.3)",
           }}>
             <span style={{ color: "#c00", fontSize: 11, fontWeight: "bold", lineHeight: 1.2 }}>株式会社</span>
             <span style={{ color: "#c00", fontSize: 10, fontWeight: "bold", lineHeight: 1.2 }}>frank</span>
@@ -141,9 +141,9 @@ function CompletionReportContent() {
         {/* 注文番号 (left) + 作業責任者印 (right) - same vertical area */}
         <div style={{ position: "relative", minHeight: 80, marginBottom: 8 }}>
 
-          {/* 作業責任者印 - absolute right */}
-          <div style={{ position: "absolute", top: 0, right: 10, display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ fontSize: 8, border: "1px solid #333", padding: "1px 6px", marginBottom: 4 }}>作業責任者印</div>
+          {/* 作業責任者印 - absolute right, boxed */}
+          <div style={{ position: "absolute", top: 0, right: 10, border: "1px solid #333", padding: "4px 10px 10px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ fontSize: 8, marginBottom: 6 }}>作業責任者印</div>
             <div style={{
               width: 50, height: 50, border: "2.5px solid #c00", borderRadius: "50%",
               display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
