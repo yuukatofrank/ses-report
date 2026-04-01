@@ -20,12 +20,22 @@ function calcDueDate(issueDate: string, offset: number, day: number): string {
 
 async function getNextInvoiceNumber(issueDate: string): Promise<string> {
   const ym = issueDate.substring(0, 7).replace("-", "");
-  const { count } = await supabase
+  const prefix = `No.${ym}-`;
+  // Get the max existing number for this month
+  const { data } = await supabase
     .from("invoices")
-    .select("*", { count: "exact", head: true })
-    .like("invoice_number", `No.${ym}-%`);
-  const next = String((count ?? 0) + 1).padStart(3, "0");
-  return `No.${ym}-${next}`;
+    .select("invoice_number")
+    .like("invoice_number", `${prefix}%`)
+    .order("invoice_number", { ascending: false })
+    .limit(1);
+
+  let maxNum = 0;
+  if (data && data.length > 0) {
+    const last = data[0].invoice_number as string;
+    const numPart = last.replace(prefix, "");
+    maxNum = parseInt(numPart) || 0;
+  }
+  return `${prefix}${String(maxNum + 1).padStart(3, "0")}`;
 }
 
 export async function GET() {
