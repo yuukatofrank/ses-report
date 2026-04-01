@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { PDFDocument } from "pdf-lib";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const path = searchParams.get("path");
-  const mode = searchParams.get("mode"); // "download" for attachment, default is inline
+  const mode = searchParams.get("mode"); // "download" | "pdf" | default(inline)
 
   if (!path) {
     return NextResponse.json(
@@ -15,8 +16,8 @@ export async function GET(request: Request) {
 
   const supabaseAdmin = createSupabaseAdminClient();
 
-  if (mode === "download") {
-    // Download the file and return with Content-Disposition: attachment
+  if (mode === "download" || mode === "pdf") {
+    // Download the file from storage
     const { data, error } = await supabaseAdmin.storage
       .from("receipts")
       .download(path);
@@ -25,18 +26,66 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error?.message ?? "ファイルが見つかりません" }, { status: 500 });
     }
 
-    // Use custom filename from query param, or fallback to storage filename
     const customName = searchParams.get("filename");
     const storageName = path.split("/").pop() ?? "receipt";
+    const fileBytes = Buffer.from(await data.arrayBuffer());
+    const mimeType = data.type || "application/octet-stream";
+
+    // PDF mode: convert image to PDF, or pass through if already PDF
+    if (mode === "pdf") {
+      const filename = (customName ?? storageName.replace(/\.[^.]+$/, "")) + ".pdf";
+      let pdfBytes: Uint8Array;
+
+      if (mimeType === "application/pdf") {
+        // Already PDF, pass through
+        pdfBytes = fileBytes;
+      } else if (mimeType.startsWith("image/")) {
+        // Convert image to PDF
+        const pdfDoc = await PDFDocument.create();
+        let image;
+        if (mimeType === "image/png") {
+          image = await pdfDoc.embedPng(fileBytes);
+        } else {
+          // JPEG, WebP etc. - try as JPEG
+          image = await pdfDoc.embedJpg(fileBytes);
+        }
+        // Fit image on A4 page with margin
+        const a4Width = 595.28;
+        const a4Height = 841.89;
+        const margin = 40;
+        const maxW = a4Width - margin * 2;
+        const maxH = a4Height - margin * 2;
+        const scale = Math.min(maxW / image.width, maxH / image.height, 1);
+        const w = image.width * scale;
+        const h = image.height * scale;
+        const page = pdfDoc.addPage([a4Width, a4Height]);
+        page.drawImage(image, {
+          x: (a4Width - w) / 2,
+          y: a4Height - margin - h,
+          width: w,
+          height: h,
+        });
+        pdfBytes = await pdfDoc.save();
+      } else {
+        return NextResponse.json({ error: "PDFに変換できないファイル形式です" }, { status: 400 });
+      }
+
+      const encodedFilename = encodeURIComponent(filename).replace(/['()]/g, escape);
+      return new NextResponse(Buffer.from(pdfBytes), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="receipt.pdf"; filename*=UTF-8''${encodedFilename}`,
+        },
+      });
+    }
+
+    // Normal download (original format)
     const ext = storageName.includes(".") ? "." + storageName.split(".").pop() : "";
     const filename = customName ? customName + ext : storageName;
-    const buffer = Buffer.from(await data.arrayBuffer());
-
-    // RFC 5987: filename* for UTF-8 support (Safari/Chrome/Firefox)
     const encodedFilename = encodeURIComponent(filename).replace(/['()]/g, escape);
-    return new NextResponse(buffer, {
+    return new NextResponse(fileBytes, {
       headers: {
-        "Content-Type": data.type || "application/octet-stream",
+        "Content-Type": mimeType,
         "Content-Disposition": `attachment; filename="receipt${ext}"; filename*=UTF-8''${encodedFilename}`,
       },
     });

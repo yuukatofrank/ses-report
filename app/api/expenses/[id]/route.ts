@@ -73,6 +73,7 @@ export async function PUT(
     updated_at: new Date().toISOString(),
   };
   if (body.status !== undefined) updateData.status = body.status;
+  if (body.month !== undefined) updateData.month = body.month;
   if (body.admin_comment !== undefined)
     updateData.admin_comment = body.admin_comment;
 

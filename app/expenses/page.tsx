@@ -289,6 +289,30 @@ function ExpensesContent() {
     }
   };
 
+  const handleChangeReportMonth = async (newMonth: string) => {
+    if (!selectedReport) return;
+    setProcessing("月変更中...");
+    try {
+      const res = await fetch(`/api/expenses/${selectedReport.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month: newMonth }),
+      });
+      if (res.ok) {
+        // Refresh the list for the NEW month and switch to it
+        setSelectedMonth(newMonth);
+        const mid = isSuperAdmin ? filterMemberId : member?.id;
+        const updated = await fetchReports(mid, newMonth);
+        const found = updated.find((r: ExpenseReport) => r.id === selectedReport.id);
+        if (found) setSelectedReport(found);
+      } else {
+        alert("月の変更に失敗しました");
+      }
+    } finally {
+      setProcessing(null);
+    }
+  };
+
   const handleApproveReport = async () => {
     if (!selectedReport) return;
     setProcessing("承認中...");
@@ -527,6 +551,11 @@ function ExpensesContent() {
             onReturn={
               isSuperAdmin && selectedReport.status === "submitted"
                 ? handleReturnReport
+                : undefined
+            }
+            onChangeMonth={
+              canEdit || (isSuperAdmin && (selectedReport.status === "draft" || selectedReport.status === "returned"))
+                ? handleChangeReportMonth
                 : undefined
             }
             isSuperAdmin={isSuperAdmin}

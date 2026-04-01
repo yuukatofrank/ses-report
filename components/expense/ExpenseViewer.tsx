@@ -9,6 +9,7 @@ interface ExpenseViewerProps {
   onDelete?: () => Promise<void>;
   onApprove?: () => Promise<void>;
   onReturn?: (comment: string) => Promise<void>;
+  onChangeMonth?: (newMonth: string) => Promise<void>;
   isSuperAdmin?: boolean;
   canEdit?: boolean;
 }
@@ -45,6 +46,7 @@ export default function ExpenseViewer({
   onDelete,
   onApprove,
   onReturn,
+  onChangeMonth,
   isSuperAdmin,
   canEdit,
 }: ExpenseViewerProps) {
@@ -53,6 +55,9 @@ export default function ExpenseViewer({
   const [returning, setReturning] = useState(false);
   const [approving, setApproving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showMonthModal, setShowMonthModal] = useState(false);
+  const [newMonth, setNewMonth] = useState(report.month);
+  const [changingMonth, setChangingMonth] = useState(false);
 
   const canOwnerEdit =
     canEdit && (report.status === "draft" || report.status === "returned");
@@ -70,6 +75,15 @@ export default function ExpenseViewer({
               {fmtMonth(report.month)} 経費申請
             </h2>
             {statusBadge(report.status)}
+            {onChangeMonth && (report.status === "draft" || report.status === "returned") && (
+              <button
+                onClick={() => { setNewMonth(report.month); setShowMonthModal(true); }}
+                className="text-[10px] text-gray-400 hover:text-[#0f6e56] transition-colors"
+                title="申請月を変更"
+              >
+                月変更
+              </button>
+            )}
           </div>
           <p className="text-xs md:text-sm text-gray-500 mb-3">{report.member_name}</p>
 
@@ -163,10 +177,10 @@ export default function ExpenseViewer({
                     領収書を表示
                   </a>
                   <a
-                    href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}&mode=download&filename=${encodeURIComponent(`${item.date}_${item.title}`)}`}
+                    href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}&mode=pdf&filename=${encodeURIComponent(`${item.date}_${item.title}`)}`}
                     className="text-[10px] text-gray-400 hover:text-gray-600 hover:underline"
                   >
-                    DL
+                    PDF
                   </a>
                 </div>
               )}
@@ -217,10 +231,10 @@ export default function ExpenseViewer({
                             表示
                           </a>
                           <a
-                            href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}&mode=download&filename=${encodeURIComponent(`${item.date}_${item.title}`)}`}
+                            href={`/api/expenses/receipt/download?path=${encodeURIComponent(item.receipt_path)}&mode=pdf&filename=${encodeURIComponent(`${item.date}_${item.title}`)}`}
                             className="text-xs text-gray-400 hover:text-gray-600 hover:underline"
                           >
-                            DL
+                            PDF
                           </a>
                         </span>
                       ) : (
@@ -283,6 +297,49 @@ export default function ExpenseViewer({
                 className="flex-1 bg-red-500 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50"
               >
                 {returning ? "処理中..." : "差し戻す"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Month change modal */}
+      {showMonthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-xl shadow-xl p-5 md:p-6 w-full max-w-sm">
+            <h2 className="text-base font-bold text-gray-800 mb-1">申請月の変更</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              現在の申請月: {fmtMonth(report.month)}
+            </p>
+            <div>
+              <label className="label">変更後の月</label>
+              <input
+                type="month"
+                value={newMonth}
+                onChange={(e) => setNewMonth(e.target.value)}
+                className="input-field w-full"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setShowMonthModal(false)} className="btn-secondary flex-1" disabled={changingMonth}>
+                キャンセル
+              </button>
+              <button
+                onClick={async () => {
+                  if (!onChangeMonth || newMonth === report.month) return;
+                  setChangingMonth(true);
+                  try {
+                    await onChangeMonth(newMonth);
+                    setShowMonthModal(false);
+                  } finally {
+                    setChangingMonth(false);
+                  }
+                }}
+                disabled={changingMonth || newMonth === report.month}
+                className="flex-1 bg-[#0f6e56] text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-[#0d5f49] transition-colors disabled:opacity-50"
+              >
+                {changingMonth ? "変更中..." : "変更する"}
               </button>
             </div>
           </div>
