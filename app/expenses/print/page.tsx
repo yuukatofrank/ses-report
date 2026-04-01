@@ -142,11 +142,15 @@ function ExpensePage({
       <div style={{ marginTop: "auto", paddingTop: "24px" }}>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "24px" }}>
           <div style={{ textAlign: "center", width: "80px" }}>
-            <div style={{ border: "1px solid #ccc", height: "60px", borderRadius: "4px", marginBottom: "4px" }}></div>
+            <div style={{ border: "1px solid #ccc", height: "60px", borderRadius: "4px", marginBottom: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: "14px", fontWeight: "bold", color: "#333" }}>加藤</span>
+            </div>
             <span style={{ fontSize: "10px", color: "#888" }}>承認</span>
           </div>
           <div style={{ textAlign: "center", width: "80px" }}>
-            <div style={{ border: "1px solid #ccc", height: "60px", borderRadius: "4px", marginBottom: "4px" }}></div>
+            <div style={{ border: "1px solid #ccc", height: "60px", borderRadius: "4px", marginBottom: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: "14px", fontWeight: "bold", color: "#333" }}>{report.member_name}</span>
+            </div>
             <span style={{ fontSize: "10px", color: "#888" }}>申請者</span>
           </div>
         </div>
