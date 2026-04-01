@@ -15,9 +15,10 @@ function fmtMonth(ym: string): string {
 
 function calcDueDate(issueDate: string, offset: number, day: number): string {
   const d = new Date(issueDate + "T00:00:00");
-  // day=0 は月末
-  if (day === 0) return new Date(d.getFullYear(), d.getMonth() + offset + 1, 0).toISOString().split("T")[0];
-  return new Date(d.getFullYear(), d.getMonth() + offset, day).toISOString().split("T")[0];
+  // 発行日の前月を基準に offset を適用
+  const baseMonth = d.getMonth() - 1;
+  if (day === 0) return new Date(d.getFullYear(), baseMonth + offset + 1, 0).toISOString().split("T")[0];
+  return new Date(d.getFullYear(), baseMonth + offset, day).toISOString().split("T")[0];
 }
 
 function generateMonthOptions(): string[] {
