@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { requireAuth } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
   const memberId = formData.get("member_id") as string | null;

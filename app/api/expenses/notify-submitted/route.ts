@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -9,6 +10,9 @@ function formatMonth(month: string): string {
 }
 
 export async function POST(request: Request) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   const body = await request.json();
   const { memberName, month, itemCount, totalAmount, expenseUrl, noExpense } = body;
 

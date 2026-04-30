@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { requireAuth } from "@/lib/auth";
 import { PDFDocument } from "pdf-lib";
 
 export async function GET(request: Request) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   const { searchParams } = new URL(request.url);
   const path = searchParams.get("path");
   const mode = searchParams.get("mode"); // "download" | "pdf" | default(inline)

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(request: Request) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   const supabase = createSupabaseAdminClient();
   const { searchParams } = new URL(request.url);
   const reportId = searchParams.get("report_id");
@@ -23,6 +27,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   const supabase = createSupabaseAdminClient();
   const body = await request.json();
   const { report_id, user_id, user_email, content } = body;

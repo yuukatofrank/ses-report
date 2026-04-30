@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(request: Request) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   const { searchParams } = new URL(request.url);
   const memberId = searchParams.get("member_id");
   const month = searchParams.get("month");
@@ -57,6 +61,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   const body = await request.json();
 
   if (!body.member_id || !body.member_name || !body.month) {

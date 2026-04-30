@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { requireAuth } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
@@ -7,6 +8,9 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   const { id } = await params;
   const supabase = createSupabaseAdminClient();
 
@@ -37,6 +41,9 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   const { id } = await params;
   const body = await request.json();
   const supabase = createSupabaseAdminClient();
@@ -154,6 +161,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   const { id } = await params;
   const supabase = createSupabaseAdminClient();
 

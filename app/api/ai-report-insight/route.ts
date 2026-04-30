@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { requireAuth } from "@/lib/auth";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: Request) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   // 最高権限ユーザーのみ許可
   const cookieStore = await cookies();
   const authClient = createServerClient(

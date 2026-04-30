@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/auth";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) return authResult.error;
+
   const { email, redirectTo: clientRedirectTo } = await request.json();
   const appUrl = process.env.APP_URL || clientRedirectTo;
 

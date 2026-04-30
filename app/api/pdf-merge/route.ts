@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 import { PDFDocument } from "pdf-lib";
 
 export async function POST(request: Request) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) return authResult.error;
+
   try {
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];

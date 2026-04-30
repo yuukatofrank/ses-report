@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/auth";
 import { ContractItem, InvoiceItem } from "@/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -40,6 +41,9 @@ async function getNextInvoiceNumber(supabase: SupabaseClient, issueDate: string)
 }
 
 export async function GET() {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) return authResult.error;
+
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("invoices")
@@ -51,6 +55,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) return authResult.error;
+
   const supabase = createSupabaseAdminClient();
   const body = await request.json();
 

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/auth";
 
 export async function GET() {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) return authResult.error;
+
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("clients")
@@ -13,6 +17,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) return authResult.error;
+
   const supabase = createSupabaseAdminClient();
   const { name } = await request.json();
   if (!name?.trim()) {
