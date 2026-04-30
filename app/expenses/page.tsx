@@ -388,7 +388,7 @@ function ExpensesContent() {
               onClick={() => router.push("/")}
               className="hidden md:inline-flex text-white/70 hover:text-white text-sm border border-white/20 px-3 py-1 rounded-lg hover:bg-white/10 transition-colors whitespace-nowrap"
             >
-              ← 月報に戻る
+              ← ホーム
             </button>
           </div>
 
@@ -422,7 +422,7 @@ function ExpensesContent() {
             {/* Back button (mobile) */}
             <button
               onClick={() => router.push("/")}
-              title="月報に戻る"
+              title="ホームに戻る"
               className="md:hidden text-white/70 hover:text-white border border-white/20 p-1.5 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

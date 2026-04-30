@@ -1,0 +1,448 @@
+"use client";
+
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
+import ReportForm from "@/components/ReportForm";
+import ReportViewer from "@/components/ReportViewer";
+import { Member, Report } from "@/types";
+import { useUser } from "../UserProvider";
+
+type ViewMode = "idle" | "form-new" | "form-edit" | "view";
+
+function HomeContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { userId, userEmail, isAdmin, member, setMember } = useUser();
+
+  const [reports, setReports] = useState<Report[]>([]);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("idle");
+  const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // 管理者用
+  const [allMembers, setAllMembers] = useState<Member[]>([]);
+  const [viewingMember, setViewingMember] = useState<Member | null>(null);
+  const [viewTab, setViewTab] = useState<"member" | "month">("member");
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [monthReports, setMonthReports] = useState<Report[]>([]);
+
+  // プロフィールモーダル
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+
+  const fetchReports = useCallback(async (memberId: string) => {
+    const res = await fetch(`/api/reports?member_id=${memberId}`);
+    if (res.ok) setReports(await res.json());
+  }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      if (!member) {
+        setShowProfileModal(true);
+        setLoading(false);
+        return;
+      }
+
+      setViewingMember(member);
+      await fetchReports(member.id);
+
+      // 管理者の場合は全メンバーを取得
+      let membersList: Member[] = [];
+      if (member.permission === "admin") {
+        const res = await fetch("/api/members");
+        if (res.ok) {
+          membersList = await res.json();
+          setAllMembers(membersList);
+          // allMembersと同じオブジェクトで viewingMember を同期
+          const matched = membersList.find((m: Member) => m.id === member.id);
+          if (matched) setViewingMember(matched);
+        }
+      }
+
+      // URLパラメータから報告書を自動表示
+      const reportId = searchParams.get("report_id");
+      if (reportId) {
+        const res = await fetch(`/api/reports/${reportId}`);
+        if (res.ok) {
+          const report = await res.json();
+          setSelectedReport(report);
+          setViewMode("view");
+
+          // 管理者の場合はレポートのメンバーに viewingMember を切り替え
+          if (member.permission === "admin" && membersList.length > 0) {
+            const reportMember = membersList.find((m: Member) => m.id === report.member_id);
+            if (reportMember) {
+              setViewingMember(reportMember);
+              await fetchReports(reportMember.id);
+            }
+          }
+        }
+      }
+      setLoading(false);
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member, fetchReports]);
+
+  const fetchMonthReports = async (month: string) => {
+    const res = await fetch(`/api/reports?month=${month}`);
+    if (res.ok) setMonthReports(await res.json());
+  };
+
+  const handleChangeViewTab = async (tab: "member" | "month") => {
+    setViewTab(tab);
+    if (tab === "month") await fetchMonthReports(selectedMonth);
+  };
+
+  const handleChangeMonth = async (month: string) => {
+    setSelectedMonth(month);
+    await fetchMonthReports(month);
+  };
+
+  // 管理者がメンバーを切り替えたとき
+  const handleChangeMember = async (target: Member) => {
+    setReports([]);  // 先に古いレポートをクリア
+    setSelectedReport(null);
+    setViewMode("idle");
+    setViewingMember(target);
+    await fetchReports(target.id);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profileName.trim() || !userId) return;
+    setProfileSaving(true);
+    try {
+      const method = member ? "PUT" : "POST";
+      const res = await fetch("/api/profile", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          name: profileName.trim(),
+          email: userEmail,
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setMember(updated);
+        setViewingMember(updated);
+        setShowProfileModal(false);
+        await fetchReports(updated.id);
+      }
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  const openEditProfile = () => {
+    setProfileName(member?.name || "");
+    setShowProfileModal(true);
+  };
+
+  const handleSelectReport = (report: Report) => {
+    setSelectedReport(report);
+    setViewMode("view");
+  };
+
+  const handleNewReport = () => {
+    setSelectedReport(null);
+    setViewMode("form-new");
+  };
+
+  const isViewingOwn = !viewingMember || viewingMember.id === member?.id;
+  // 選択中の報告書が自分のものかどうか（管理者が他人の報告書を見ている場合はfalse）
+  const isOwnReport = selectedReport ? selectedReport.member_id === member?.id : isViewingOwn;
+  // 編集・提出ができるのは「報告書の作成者本人 かつ 管理者でない」場合のみ
+  const canEditOrSubmit = isOwnReport && member?.permission !== "admin";
+
+  const handleSaveReport = async (data: Partial<Report>, status: "draft" | "submitted") => {
+    if (viewMode === "form-new") {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, status }),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        if (member) await fetchReports(member.id);
+        setSelectedReport(saved);
+        setViewMode("view");
+      } else {
+        const err = await res.json();
+        alert(err.error || "保存に失敗しました");
+      }
+    } else if (viewMode === "form-edit" && selectedReport) {
+      const res = await fetch(`/api/reports/${selectedReport.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, status }),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        if (member) await fetchReports(member.id);
+        setSelectedReport(saved);
+        setViewMode("view");
+      } else {
+        alert("更新に失敗しました");
+      }
+    }
+  };
+
+  const handleEditReport = async () => {
+    if (!selectedReport) return;
+    // 提出済みの場合は編集前にdraftに戻す
+    if (selectedReport.status === "submitted") {
+      const res = await fetch(`/api/reports/${selectedReport.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...selectedReport, status: "draft" }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setSelectedReport(updated);
+        if (member) await fetchReports(member.id);
+      }
+    }
+    setViewMode("form-edit");
+  };
+
+  const handleSubmitReport = async () => {
+    if (!selectedReport) return;
+    const res = await fetch(`/api/reports/${selectedReport.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...selectedReport, status: "submitted" }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setSelectedReport(updated);
+      if (viewingMember) await fetchReports(viewingMember.id);
+    }
+  };
+
+  const handleReturnReport = async (reason?: string) => {
+    if (!selectedReport) return;
+    const res = await fetch(`/api/reports/${selectedReport.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...selectedReport, status: "returned" }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setSelectedReport(updated);
+      if (viewingMember) await fetchReports(viewingMember.id);
+
+      // 報告者へ差し戻しメールを送信（レポートのmember_idから正しい記入者を取得）
+      const reportAuthor = allMembers.find((m) => m.id === selectedReport.member_id);
+      fetch("/api/notify-returned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: selectedReport.member_id,
+          memberEmail: reportAuthor?.email ?? null,
+          memberName: selectedReport.member_name,
+          month: selectedReport.month,
+          project: selectedReport.project,
+          reason: reason || null,
+          reportUrl: `${window.location.origin}?report_id=${selectedReport.id}`,
+        }),
+      });
+    }
+  };
+
+  const handleReviewReport = async (comment?: string) => {
+    if (!selectedReport) return;
+    const res = await fetch(`/api/reports/${selectedReport.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...selectedReport, status: "reviewed" }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setSelectedReport(updated);
+      if (viewingMember) await fetchReports(viewingMember.id);
+
+      // 報告者へ確認完了メールを送信（viewingMemberではなくレポートのmember_idから取得）
+      const reportAuthor = allMembers.find((m) => m.id === selectedReport.member_id);
+      const authorEmail = reportAuthor?.email;
+      if (authorEmail) {
+        fetch("/api/notify-reviewed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            memberEmail: authorEmail,
+            memberName: selectedReport.member_name,
+            month: selectedReport.month,
+            project: selectedReport.project,
+            comment: comment || null,
+            reportUrl: `${window.location.origin}?report_id=${selectedReport.id}`,
+          }),
+        }).catch(console.error);
+      }
+    }
+  };
+
+  const handleDeleteReport = async () => {
+    if (!selectedReport) return;
+    if (!confirm("この月次報告を削除しますか？")) return;
+    const res = await fetch(`/api/reports/${selectedReport.id}`, { method: "DELETE" });
+    if (res.ok) {
+      if (member) await fetchReports(member.id);
+      setSelectedReport(null);
+      setViewMode("idle");
+    } else {
+      alert("削除に失敗しました");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-500">読み込み中...</div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Header
+        onEditProfile={openEditProfile}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+      />
+
+      <Sidebar
+        member={member}
+        reports={reports}
+        selectedReport={selectedReport}
+        onSelectReport={handleSelectReport}
+        onNewReport={handleNewReport}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        allMembers={member?.permission === "admin" ? allMembers : undefined}
+        viewingMember={viewingMember}
+        onChangeMember={handleChangeMember}
+        viewTab={viewTab}
+        onChangeViewTab={member?.permission === "admin" ? handleChangeViewTab : undefined}
+        selectedMonth={selectedMonth}
+        onChangeMonth={handleChangeMonth}
+        monthReports={monthReports}
+      />
+
+      {/* メインエリア */}
+      <main className="min-h-screen overflow-y-auto md:ml-[260px]" style={{ paddingTop: "var(--header-total)" }}>
+        {viewMode === "idle" && (
+          <div className="flex flex-col items-center justify-center text-gray-400 px-4 text-center" style={{ minHeight: "calc(100vh - var(--header-total))" }}>
+            <div className="text-5xl mb-4">📋</div>
+            <p className="text-base md:text-lg font-medium">
+              {member
+                ? "月報を選択するか、新規作成してください"
+                : "プロフィールを設定してください"}
+            </p>
+            {member && isViewingOwn && (
+              <div className="mt-4 flex gap-3">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="md:hidden btn-secondary text-sm"
+                >
+                  📋 月報一覧
+                </button>
+                <button
+                  onClick={handleNewReport}
+                  className="btn-primary text-sm"
+                >
+                  ＋ 新規作成
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {(viewMode === "form-new" || viewMode === "form-edit") && member && (
+          <ReportForm
+            member={member}
+            report={viewMode === "form-edit" ? selectedReport ?? undefined : undefined}
+            onSave={handleSaveReport}
+            onDelete={viewMode === "form-edit" ? handleDeleteReport : undefined}
+            onCancel={() => setViewMode(selectedReport ? "view" : "idle")}
+          />
+        )}
+
+        {viewMode === "view" && selectedReport && (
+          <ReportViewer
+            report={selectedReport}
+            onEdit={canEditOrSubmit && selectedReport?.status !== "reviewed" ? handleEditReport : undefined}
+            onSubmit={canEditOrSubmit && selectedReport?.status !== "reviewed" ? handleSubmitReport : undefined}
+            onReturn={member?.permission === "admin" ? handleReturnReport : undefined}
+            onReview={member?.permission === "admin" ? handleReviewReport : undefined}
+            isAdmin={member?.permission === "admin"}
+            isSuperAdmin={isAdmin}
+            canEditOrSubmit={canEditOrSubmit}
+          />
+        )}
+      </main>
+
+      {/* プロフィール設定・編集モーダル */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <h2 className="text-base font-bold text-gray-800 mb-1">
+              {member ? "プロフィール編集" : "プロフィール設定"}
+            </h2>
+            <p className="text-xs text-gray-500 mb-4">
+              {member ? "名前を変更できます" : "月報を作成する前に名前を登録してください"}
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="label">氏名 *</label>
+                <input
+                  type="text"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  className="input-field"
+                  placeholder="山田 太郎"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              {member && (
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className="btn-secondary flex-1"
+                >
+                  キャンセル
+                </button>
+              )}
+              <button
+                onClick={handleSaveProfile}
+                disabled={!profileName.trim() || profileSaving}
+                className="btn-primary flex-1"
+              >
+                {profileSaving ? "保存中..." : "保存"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-500">読み込み中...</div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
+  );
+}

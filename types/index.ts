@@ -1,5 +1,6 @@
 export interface Member {
   id: string;
+  user_id: string;
   name: string;
   role: string | null;
   email: string | null;

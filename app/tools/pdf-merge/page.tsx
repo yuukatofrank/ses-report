@@ -82,7 +82,7 @@ export default function PdfMergePage() {
       <div style={{ backgroundColor: "#1a1a2e", padding: "16px 24px" }}>
         <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h1 style={{ color: "#fff", fontSize: 16, fontWeight: "bold", margin: 0 }}>PDF結合ツール</h1>
-          <a href="/" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, textDecoration: "none" }}>← 戻る</a>
+          <a href="/" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, textDecoration: "none" }}>← ホーム</a>
         </div>
       </div>
 

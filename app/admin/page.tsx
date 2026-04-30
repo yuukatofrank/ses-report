@@ -148,7 +148,7 @@ export default function AdminPage() {
           <div className="text-4xl mb-4">🚫</div>
           <p className="text-gray-600 font-medium">アクセス権限がありません</p>
           <button onClick={() => router.push("/")} className="mt-4 text-[#0f6e56] hover:underline text-sm">
-            ← トップへ戻る
+            ← ホーム
           </button>
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function AdminPage() {
         <h1 className="text-white font-bold text-lg">管理画面 — ユーザー管理</h1>
         <button onClick={() => router.push("/")}
           className="text-white/70 hover:text-white text-sm border border-white/20 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
-          ← 月報画面へ
+          ← ホーム
         </button>
       </div>
 

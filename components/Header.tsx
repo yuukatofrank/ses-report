@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/app/UserProvider";
 
 interface HeaderProps {
   onEditProfile: () => void;
-  onToggleSidebar: () => void;
+  onToggleSidebar?: () => void;
 }
 
 export default function Header({ onEditProfile, onToggleSidebar }: HeaderProps) {
@@ -27,19 +28,21 @@ export default function Header({ onEditProfile, onToggleSidebar }: HeaderProps) 
     >
       <div className="flex items-center justify-between px-3 md:px-6" style={{ height: "var(--header-h)" }}>
       <div className="flex items-center gap-2">
-        {/* ハンバーガーメニュー（モバイルのみ） */}
-        <button
-          onClick={onToggleSidebar}
-          className="md:hidden text-white p-1 rounded hover:bg-white/10 transition-colors"
-          aria-label="メニュー"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-        <h1 className="text-white font-bold text-sm md:text-lg tracking-wide">
+        {/* ハンバーガーメニュー（モバイル + サイドバーがあるページのみ） */}
+        {onToggleSidebar && (
+          <button
+            onClick={onToggleSidebar}
+            className="md:hidden text-white p-1 rounded hover:bg-white/10 transition-colors"
+            aria-label="メニュー"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
+        <Link href="/" className="text-white font-bold text-sm md:text-lg tracking-wide hover:text-white/80 transition-colors">
           frankSQUARE<span className="hidden sm:inline">管理システム</span><span className="sm:hidden">管理</span>
-        </h1>
+        </Link>
       </div>
 
       <div className="flex items-center gap-2">
@@ -50,42 +53,42 @@ export default function Header({ onEditProfile, onToggleSidebar }: HeaderProps) 
         )}
 
         {member && (
-          <button
-            onClick={() => router.push("/expenses")}
+          <Link
+            href="/reports"
             className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
                        font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
           >
-            経費申請
-          </button>
+            月報
+          </Link>
+        )}
+
+        {member && (
+          <Link
+            href="/expenses"
+            className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
+                       font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
+          >
+            経費
+          </Link>
         )}
 
         {isAdmin && (
           <>
-            <button
-              onClick={() => router.push("/invoices")}
+            <Link
+              href="/invoices"
               className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
                          font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
             >
               請求書
-            </button>
-            <button
-              onClick={() => router.push("/admin")}
-              className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
+            </Link>
+            <Link
+              href="/admin"
+              className="hidden md:inline-flex text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
                          font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
             >
               管理
-            </button>
+            </Link>
           </>
-        )}
-
-        {member && (
-          <button
-            onClick={() => router.push("/tools/pdf-merge")}
-            className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
-                       font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
-          >
-            PDF結合
-          </button>
         )}
 
         <button

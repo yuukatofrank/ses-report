@@ -91,7 +91,7 @@ export default function InvoicesPage() {
       <div className="text-center">
         <div className="text-4xl mb-4">🚫</div>
         <p className="text-gray-600 font-medium">アクセス権限がありません</p>
-        <button onClick={() => router.push("/")} className="mt-4 text-[#0f6e56] hover:underline text-sm">← トップへ戻る</button>
+        <button onClick={() => router.push("/")} className="mt-4 text-[#0f6e56] hover:underline text-sm">← ホーム</button>
       </div>
     </div>
   );
@@ -106,7 +106,7 @@ export default function InvoicesPage() {
         <div className="flex items-center justify-between px-3 md:px-6" style={{ height: "var(--header-h)" }}>
           <h1 className="text-white font-bold text-sm md:text-lg truncate">請求書管理</h1>
           <button onClick={() => router.push("/")} className="text-white/70 hover:text-white text-xs md:text-sm border border-white/20 px-2 md:px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors whitespace-nowrap">
-            ← 月報へ
+            ← ホーム
           </button>
         </div>
       </div>
