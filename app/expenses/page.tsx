@@ -7,6 +7,7 @@ import ExpenseList from "@/components/expense/ExpenseList";
 import ExpenseForm from "@/components/expense/ExpenseForm";
 import ExpenseViewer from "@/components/expense/ExpenseViewer";
 import { useUser } from "@/app/UserProvider";
+import { getDefaultMonth } from "@/lib/date";
 
 type ViewMode = "idle" | "form-new" | "form-edit" | "view";
 
@@ -28,10 +29,7 @@ function ExpensesContent() {
   const [processing, setProcessing] = useState<string | null>(null);
 
   // Filters
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  });
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => getDefaultMonth());
   const [filterMemberId, setFilterMemberId] = useState<string>("all");
 
   const fetchReports = useCallback(

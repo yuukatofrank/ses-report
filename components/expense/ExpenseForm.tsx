@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { ExpenseReport, ExpenseItem, ExpenseCategory, EXPENSE_CATEGORIES } from "@/types";
+import { getDefaultMonth } from "@/lib/date";
 
 interface ExpenseFormProps {
   memberId: string;
@@ -32,8 +33,7 @@ export default function ExpenseForm({
   onCancel,
   onDelete,
 }: ExpenseFormProps) {
-  const now = new Date();
-  const defaultMonth = report?.month ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const defaultMonth = report?.month ?? getDefaultMonth();
 
   const [month, setMonth] = useState(defaultMonth);
   const [items, setItems] = useState<ExpenseItem[]>(() => {

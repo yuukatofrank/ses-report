@@ -8,6 +8,7 @@ import ReportForm from "@/components/ReportForm";
 import ReportViewer from "@/components/ReportViewer";
 import { Member, Report } from "@/types";
 import { useUser } from "../UserProvider";
+import { getDefaultMonth } from "@/lib/date";
 
 type ViewMode = "idle" | "form-new" | "form-edit" | "view";
 
@@ -26,10 +27,7 @@ function HomeContent() {
   const [allMembers, setAllMembers] = useState<Member[]>([]);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [viewTab, setViewTab] = useState<"member" | "month">("member");
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  });
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => getDefaultMonth());
   const [monthReports, setMonthReports] = useState<Report[]>([]);
 
   // プロフィールモーダル

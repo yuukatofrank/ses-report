@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/get-user";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { getDefaultMonth, formatMonthLabel } from "@/lib/date";
 import DashboardClient from "./DashboardClient";
 
 type DashboardStats = {
@@ -11,16 +12,6 @@ type DashboardStats = {
   pendingExpensesCount: number;
   latestInvoiceMonth: string | null;
 };
-
-function getThisMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function formatMonthLabel(ym: string): string {
-  const [y, m] = ym.split("-");
-  return `${y}年${parseInt(m)}月`;
-}
 
 const STATUS_LABEL: Record<string, DashboardStats["thisMonthReportStatus"]> = {
   draft: "下書き",
@@ -34,7 +25,7 @@ async function getDashboardStats(
   isAdmin: boolean
 ): Promise<DashboardStats> {
   const supabase = createSupabaseAdminClient();
-  const thisMonth = getThisMonth();
+  const thisMonth = getDefaultMonth();
   const thisMonthLabel = formatMonthLabel(thisMonth);
 
   const [thisReport, mySubmittedExpenses, pendingReports, pendingExpenses, latestInvoice] =

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Report, Member } from "@/types";
+import { getDefaultMonth } from "@/lib/date";
 
 interface ReportFormProps {
   member: Member;
@@ -18,8 +19,7 @@ export default function ReportForm({
   onDelete,
   onCancel,
 }: ReportFormProps) {
-  const today = new Date();
-  const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const defaultMonth = getDefaultMonth();
 
   const [form, setForm] = useState({
     month: report?.month ?? defaultMonth,
