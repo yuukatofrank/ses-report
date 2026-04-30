@@ -13,6 +13,23 @@ export default function ResetPasswordPage() {
   const supabase = createSupabaseBrowserClient();
 
   useEffect(() => {
+    // PKCE flow: ?code=xxx を session に交換
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }: { error: { message: string } | null }) => {
+        if (error) {
+          setMessage({
+            type: "error",
+            text: "リンクが無効か期限切れです。もう一度パスワードリセットを依頼してください。",
+          });
+        } else {
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      });
+      return;
+    }
+
     // implicit flow: ハッシュからトークンを取得してセッションを確立
     const hash = window.location.hash;
     if (hash) {

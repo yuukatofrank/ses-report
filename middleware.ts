@@ -29,7 +29,18 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  // Supabaseのパスワードリセット/招待リンクからの戻り（PKCE flow）を /auth/reset-password に振り分ける
+  // SupabaseがredirectToを尊重せず Site URL に飛ばしてくるケースの救済
+  const code = searchParams.get("code");
+  const recoveryType = searchParams.get("type");
+  if (code && pathname === "/") {
+    const target = new URL("/auth/reset-password", request.url);
+    target.searchParams.set("code", code);
+    if (recoveryType) target.searchParams.set("type", recoveryType);
+    return NextResponse.redirect(target);
+  }
 
   // 未認証ユーザーを /auth にリダイレクト（認証フロー系ページは除外）
   const authPublicPaths = ["/auth", "/auth/set-password", "/auth/callback", "/auth/forgot-password", "/auth/reset-password"];
