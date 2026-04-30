@@ -2,22 +2,20 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import ReportForm from "@/components/ReportForm";
 import ReportViewer from "@/components/ReportViewer";
 import { Member, Report } from "@/types";
+import { useUser } from "./UserProvider";
 
 type ViewMode = "idle" | "form-new" | "form-edit" | "view";
 
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createSupabaseBrowserClient();
+  const { userId, userEmail, isAdmin, member, setMember } = useUser();
 
-  const [userId, setUserId] = useState<string | null>(null);
-  const [member, setMember] = useState<Member | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("idle");
@@ -38,28 +36,6 @@ function HomeContent() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileName, setProfileName] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  // 認証チェック
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        router.push("/auth");
-      } else {
-        setUserId(data.user.id);
-        setUserEmail(data.user.email ?? null);
-      }
-    });
-  }, [router, supabase]);
-
-  const fetchProfile = useCallback(async (uid: string) => {
-    const res = await fetch(`/api/profile?user_id=${uid}`);
-    if (res.ok) {
-      const data = await res.json();
-      return data as Member | null;
-    }
-    return null;
-  }, []);
 
   const fetchReports = useCallback(async (memberId: string) => {
     const res = await fetch(`/api/reports?member_id=${memberId}`);
@@ -67,45 +43,44 @@ function HomeContent() {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
     const init = async () => {
-      const profile = await fetchProfile(userId);
-      setMember(profile);
-      if (!profile) {
+      if (!member) {
         setShowProfileModal(true);
-      } else {
-        setViewingMember(profile);
-        await fetchReports(profile.id);
+        setLoading(false);
+        return;
+      }
 
-        // 管理者の場合は全メンバーを取得
-        let membersList: Member[] = [];
-        if (profile.permission === "admin") {
-          const res = await fetch("/api/members");
-          if (res.ok) {
-            membersList = await res.json();
-            setAllMembers(membersList);
-            // allMembersと同じオブジェクトで viewingMember を同期
-            const matched = membersList.find((m: Member) => m.id === profile.id);
-            if (matched) setViewingMember(matched);
-          }
+      setViewingMember(member);
+      await fetchReports(member.id);
+
+      // 管理者の場合は全メンバーを取得
+      let membersList: Member[] = [];
+      if (member.permission === "admin") {
+        const res = await fetch("/api/members");
+        if (res.ok) {
+          membersList = await res.json();
+          setAllMembers(membersList);
+          // allMembersと同じオブジェクトで viewingMember を同期
+          const matched = membersList.find((m: Member) => m.id === member.id);
+          if (matched) setViewingMember(matched);
         }
+      }
 
-        // URLパラメータから報告書を自動表示
-        const reportId = searchParams.get("report_id");
-        if (reportId) {
-          const res = await fetch(`/api/reports/${reportId}`);
-          if (res.ok) {
-            const report = await res.json();
-            setSelectedReport(report);
-            setViewMode("view");
+      // URLパラメータから報告書を自動表示
+      const reportId = searchParams.get("report_id");
+      if (reportId) {
+        const res = await fetch(`/api/reports/${reportId}`);
+        if (res.ok) {
+          const report = await res.json();
+          setSelectedReport(report);
+          setViewMode("view");
 
-            // 管理者の場合はレポートのメンバーに viewingMember を切り替え
-            if (profile.permission === "admin" && membersList.length > 0) {
-              const reportMember = membersList.find((m: Member) => m.id === report.member_id);
-              if (reportMember) {
-                setViewingMember(reportMember);
-                await fetchReports(reportMember.id);
-              }
+          // 管理者の場合はレポートのメンバーに viewingMember を切り替え
+          if (member.permission === "admin" && membersList.length > 0) {
+            const reportMember = membersList.find((m: Member) => m.id === report.member_id);
+            if (reportMember) {
+              setViewingMember(reportMember);
+              await fetchReports(reportMember.id);
             }
           }
         }
@@ -113,7 +88,8 @@ function HomeContent() {
       setLoading(false);
     };
     init();
-  }, [userId, fetchProfile, fetchReports]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member, fetchReports]);
 
   const fetchMonthReports = async (month: string) => {
     const res = await fetch(`/api/reports?month=${month}`);
@@ -337,7 +313,6 @@ function HomeContent() {
   return (
     <>
       <Header
-        member={member}
         onEditProfile={openEditProfile}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
@@ -407,7 +382,7 @@ function HomeContent() {
             onReturn={member?.permission === "admin" ? handleReturnReport : undefined}
             onReview={member?.permission === "admin" ? handleReviewReport : undefined}
             isAdmin={member?.permission === "admin"}
-            isSuperAdmin={userEmail === process.env.NEXT_PUBLIC_ADMIN_EMAIL}
+            isSuperAdmin={isAdmin}
             canEditOrSubmit={canEditOrSubmit}
           />
         )}

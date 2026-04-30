@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Report, Comment } from "@/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { useUser } from "@/app/UserProvider";
 
 interface ReportViewerProps {
   report: Report;
@@ -106,16 +107,11 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const { userId: currentUserId, userEmail: currentUserEmail } = useUser();
 
   const supabaseClient = createSupabaseBrowserClient();
 
   useEffect(() => {
-    supabaseClient.auth.getUser().then(({ data }) => {
-      setCurrentUserId(data.user?.id ?? null);
-      setCurrentUserEmail(data.user?.email ?? null);
-    });
     setAnalysis(report.ai_analysis || "");
     setInsight(report.ai_insight ?? null);
     fetchComments();

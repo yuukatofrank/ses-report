@@ -1,29 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { Member } from "@/types";
+import { useUser } from "@/app/UserProvider";
 
 interface HeaderProps {
-  member: Member | null;
   onEditProfile: () => void;
   onToggleSidebar: () => void;
 }
 
-export default function Header({ member, onEditProfile, onToggleSidebar }: HeaderProps) {
+export default function Header({ onEditProfile, onToggleSidebar }: HeaderProps) {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (adminEmail && data.user?.email === adminEmail) {
-        setIsAdmin(true);
-      }
-    });
-  }, []);
+  const { isAdmin, member } = useUser();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

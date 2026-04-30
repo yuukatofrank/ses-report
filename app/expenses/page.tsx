@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { ExpenseReport, ExpenseItem, Member } from "@/types";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
 import ExpenseList from "@/components/expense/ExpenseList";
 import ExpenseForm from "@/components/expense/ExpenseForm";
 import ExpenseViewer from "@/components/expense/ExpenseViewer";
+import { useUser } from "@/app/UserProvider";
 
 type ViewMode = "idle" | "form-new" | "form-edit" | "view";
 
@@ -17,12 +17,9 @@ function fmtMonth(ym: string): string {
 
 function ExpensesContent() {
   const router = useRouter();
-  const supabase = createSupabaseBrowserClient();
+  const { isAdmin: isSuperAdmin, member } = useUser();
 
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [member, setMember] = useState<Member | null>(null);
   const [allMembers, setAllMembers] = useState<Member[]>([]);
   const [reports, setReports] = useState<ExpenseReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<ExpenseReport | null>(null);
@@ -36,27 +33,6 @@ function ExpensesContent() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [filterMemberId, setFilterMemberId] = useState<string>("all");
-
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  const isSuperAdmin = userEmail === adminEmail;
-
-  // Auth check
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        router.push("/auth");
-      } else {
-        setUserId(data.user.id);
-        setUserEmail(data.user.email ?? null);
-      }
-    });
-  }, [router, supabase]);
-
-  const fetchProfile = useCallback(async (uid: string) => {
-    const res = await fetch(`/api/profile?user_id=${uid}`);
-    if (res.ok) return (await res.json()) as Member | null;
-    return null;
-  }, []);
 
   const fetchReports = useCallback(
     async (memberId?: string, month?: string): Promise<ExpenseReport[]> => {
@@ -76,18 +52,13 @@ function ExpensesContent() {
 
   // Init
   useEffect(() => {
-    if (!userId) return;
     const init = async () => {
-      const profile = await fetchProfile(userId);
-      setMember(profile);
-      if (!profile) {
+      if (!member) {
         router.push("/");
         return;
       }
 
-      const isSA = userEmail === adminEmail;
-
-      if (isSA) {
+      if (isSuperAdmin) {
         // Parallel fetch: members + reports
         const [membersRes] = await Promise.all([
           fetch("/api/members"),
@@ -97,15 +68,15 @@ function ExpensesContent() {
           setAllMembers(await membersRes.json());
         }
       } else {
-        setFilterMemberId(profile.id);
-        await fetchReports(profile.id, selectedMonth);
+        setFilterMemberId(member.id);
+        await fetchReports(member.id, selectedMonth);
       }
 
       setLoading(false);
     };
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [member, isSuperAdmin]);
 
   // Re-fetch on filter change
   const handleMonthChange = async (month: string) => {

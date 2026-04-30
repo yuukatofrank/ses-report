@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { Member } from "@/types";
+import { useUser } from "@/app/UserProvider";
 
 type AdminUser = {
   auth_id: string;
@@ -19,7 +19,7 @@ type AdminUser = {
 
 export default function AdminPage() {
   const router = useRouter();
-  const supabase = createSupabaseBrowserClient();
+  const { isAdmin } = useUser();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
@@ -33,20 +33,14 @@ export default function AdminPage() {
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        router.push("/auth");
-        return;
-      }
-      if (adminEmail && data.user.email !== adminEmail) {
-        setUnauthorized(true);
-        setLoading(false);
-        return;
-      }
-      fetchUsers();
-    });
+    if (!isAdmin) {
+      setUnauthorized(true);
+      setLoading(false);
+      return;
+    }
+    fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isAdmin]);
 
   const fetchUsers = async () => {
     const res = await fetch("/api/admin/users");

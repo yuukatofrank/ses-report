@@ -15,8 +15,12 @@ export function createSupabaseAdminClient() {
 }
 
 // クライアントコンポーネント用（認証セッションを保持）
+// 同一ブラウザコンテキスト内で1度だけ生成（Multiple GoTrueClient 警告を回避）
+let browserClientSingleton: ReturnType<typeof createBrowserClient> | null = null;
 export function createSupabaseBrowserClient() {
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  if (browserClientSingleton) return browserClientSingleton;
+  browserClientSingleton = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  return browserClientSingleton;
 }
 
 // Server Component / Route Handler 用（cookieベースで認証コンテキスト保持）

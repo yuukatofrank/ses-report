@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { Invoice, Client, Contract } from "@/types";
 import InvoiceList from "@/components/invoice/InvoiceList";
 import InvoiceForm from "@/components/invoice/InvoiceForm";
 import BulkInvoiceCreator from "@/components/invoice/BulkInvoiceCreator";
 import ContractManager from "@/components/invoice/ContractManager";
+import { useUser } from "@/app/UserProvider";
 
 import CompletionReportModal from "@/components/invoice/CompletionReportModal";
 
@@ -26,7 +26,7 @@ function fmtMonth(ym: string): string {
 
 export default function InvoicesPage() {
   const router = useRouter();
-  const supabase = createSupabaseBrowserClient();
+  const { isAdmin } = useUser();
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -37,15 +37,15 @@ export default function InvoicesPage() {
   const [checkedIds, setCheckedIds] = useState<string[]>([]);
   const [showCompletion, setShowCompletion] = useState(false);
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) { router.push("/auth"); return; }
-      if (adminEmail && data.user.email !== adminEmail) { setUnauthorized(true); setLoading(false); return; }
-      fetchInvoices();
-    });
-  }, []);
+    if (!isAdmin) {
+      setUnauthorized(true);
+      setLoading(false);
+      return;
+    }
+    fetchInvoices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   const fetchInvoices = async () => {
     const res = await fetch("/api/invoices");
