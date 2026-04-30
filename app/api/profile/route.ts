@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 export async function GET(request: Request) {
+  const supabase = createSupabaseAdminClient();
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get("user_id");
 
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const supabase = createSupabaseAdminClient();
   const body = await request.json();
   const { user_id, name, role, email } = body;
 
@@ -46,6 +48,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const supabase = createSupabaseAdminClient();
   const body = await request.json();
   const { user_id, name, role, email } = body;
 

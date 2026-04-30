@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 import { ContractItem, InvoiceItem } from "@/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 function expandName(template: string, targetMonth: string, workerName: string, projectName: string): string {
   const month = parseInt(targetMonth.split("-")[1]);
@@ -18,7 +19,7 @@ function calcDueDate(issueDate: string, offset: number, day: number): string {
   return new Date(d.getFullYear(), baseMonth + offset, day).toISOString().split("T")[0];
 }
 
-async function getNextInvoiceNumber(issueDate: string): Promise<string> {
+async function getNextInvoiceNumber(supabase: SupabaseClient, issueDate: string): Promise<string> {
   const ym = issueDate.substring(0, 7).replace("-", "");
   const prefix = `No.${ym}-`;
   // Get the max existing number for this month
@@ -39,6 +40,7 @@ async function getNextInvoiceNumber(issueDate: string): Promise<string> {
 }
 
 export async function GET() {
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("invoices")
     .select(`*, contract:contracts(*, client:clients(id, name), member:members(id, name)), items:invoice_items(*)`)
@@ -49,6 +51,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const supabase = createSupabaseAdminClient();
   const body = await request.json();
 
   // 一括作成
@@ -71,7 +74,7 @@ export async function POST(request: Request) {
     const created: unknown[] = [];
 
     for (const target_month of target_months) {
-      const invoice_number = await getNextInvoiceNumber(issue_date);
+      const invoice_number = await getNextInvoiceNumber(supabase, issue_date);
       const { data: invoice, error: invErr } = await supabase
         .from("invoices")
         .insert({ contract_id, invoice_number, issue_date, target_month, payment_due_date, memo: null })
@@ -102,7 +105,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
   }
 
-  const finalNumber = invoice_number?.trim() || (await getNextInvoiceNumber(issue_date));
+  const finalNumber = invoice_number?.trim() || (await getNextInvoiceNumber(supabase, issue_date));
   const { data: invoice, error } = await supabase
     .from("invoices")
     .insert({ contract_id, invoice_number: finalNumber, issue_date, target_month, payment_due_date, memo: memo || null })

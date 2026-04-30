@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 import { InvoiceItem } from "@/types";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = createSupabaseAdminClient();
   const { id } = await params;
   const { data, error } = await supabase
     .from("invoices")
@@ -15,6 +16,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = createSupabaseAdminClient();
   const { id } = await params;
   const { invoice_number, issue_date, target_month, payment_due_date, memo, items } = await request.json();
 
@@ -49,6 +51,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = createSupabaseAdminClient();
   const { id } = await params;
   const { error } = await supabase.from("invoices").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

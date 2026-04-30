@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 export async function GET(request: Request) {
+  const supabase = createSupabaseAdminClient();
   const { searchParams } = new URL(request.url);
   const ym = searchParams.get("ym"); // e.g. "202603"
   if (!ym) return NextResponse.json({ error: "ym is required" }, { status: 400 });

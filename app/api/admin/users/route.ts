@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { createSupabaseAdminClient, supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 export async function GET() {
-  const adminClient = createSupabaseAdminClient();
+  const supabase = createSupabaseAdminClient();
+  const adminClient = supabase;
 
   // auth.users を全件取得
   const { data: authData, error: authError } = await adminClient.auth.admin.listUsers();

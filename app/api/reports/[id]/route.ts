@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const supabase = createSupabaseAdminClient();
   const { id } = await params;
   const { data, error } = await supabase
     .from("reports")
@@ -22,6 +23,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const supabase = createSupabaseAdminClient();
   const { id } = await params;
   const body = await request.json();
 
@@ -54,6 +56,7 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const supabase = createSupabaseAdminClient();
   const { id } = await params;
   const { error } = await supabase
     .from("reports")

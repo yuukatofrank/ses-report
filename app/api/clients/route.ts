@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 export async function GET() {
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("clients")
     .select("*")
@@ -12,6 +13,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const supabase = createSupabaseAdminClient();
   const { name } = await request.json();
   if (!name?.trim()) {
     return NextResponse.json({ error: "会社名は必須です" }, { status: 400 });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -10,6 +10,7 @@ function formatMonth(month: string): string {
 }
 
 export async function POST(request: Request) {
+  const supabase = createSupabaseAdminClient();
   const body = await request.json();
   const { reportId, commenterEmail, commenterName, commentContent } = body;
 

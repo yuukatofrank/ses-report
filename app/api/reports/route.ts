@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseAdminClient } from "@/lib/supabase";
 
 export async function GET(request: Request) {
+  const supabase = createSupabaseAdminClient();
   const { searchParams } = new URL(request.url);
   const memberId = searchParams.get("member_id");
   const month = searchParams.get("month");
@@ -23,6 +24,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const supabase = createSupabaseAdminClient();
   const body = await request.json();
 
   if (!body.member_id || !body.month || !body.member_name) {
