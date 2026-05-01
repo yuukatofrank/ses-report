@@ -42,9 +42,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "user_id と name は必須です" }, { status: 400 });
   }
 
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const permission = email && email === adminEmail ? "admin" : "member";
+
   const { data, error } = await supabase
     .from("members")
-    .insert({ user_id, name: name.trim(), role: role?.trim() || null, email: email || null })
+    .insert({ user_id, name: name.trim(), role: role?.trim() || null, email: email || null, permission })
     .select()
     .single();
 

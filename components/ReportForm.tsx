@@ -195,7 +195,7 @@ export default function ReportForm({
               下書き保存
             </button>
             <button
-              onClick={() => handleSave("draft")}
+              onClick={() => handleSave("submitted")}
               disabled={saving}
               className="btn-primary"
             >

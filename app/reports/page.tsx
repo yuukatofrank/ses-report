@@ -256,7 +256,7 @@ function HomeContent() {
           month: selectedReport.month,
           project: selectedReport.project,
           reason: reason || null,
-          reportUrl: `${window.location.origin}?report_id=${selectedReport.id}`,
+          reportUrl: `${window.location.origin}/reports?report_id=${selectedReport.id}`,
         }),
       });
     }
@@ -287,7 +287,7 @@ function HomeContent() {
             month: selectedReport.month,
             project: selectedReport.project,
             comment: comment || null,
-            reportUrl: `${window.location.origin}?report_id=${selectedReport.id}`,
+            reportUrl: `${window.location.origin}/reports?report_id=${selectedReport.id}`,
           }),
         }).catch(console.error);
       }

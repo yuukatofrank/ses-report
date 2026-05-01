@@ -228,7 +228,7 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
           learnings: report.learnings,
           nextMonth: report.next_month,
 
-          reportUrl: `${window.location.origin}?report_id=${report.id}`,
+          reportUrl: `${window.location.origin}/reports?report_id=${report.id}`,
         }),
       });
       if (res.ok) {

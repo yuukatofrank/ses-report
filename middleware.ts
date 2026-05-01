@@ -31,14 +31,19 @@ export async function middleware(request: NextRequest) {
 
   const { pathname, searchParams } = request.nextUrl;
 
-  // Supabaseのパスワードリセット/招待リンクからの戻り（PKCE flow）を /auth/reset-password に振り分ける
-  // SupabaseがredirectToを尊重せず Site URL に飛ばしてくるケースの救済
+  // Supabaseのパスワードリセット/招待リンクからの戻り（PKCE flow）を type に応じて振り分ける
+  // Supabaseが redirectTo を尊重せず Site URL（ /） に飛ばしてくるケースの救済
   const code = searchParams.get("code");
-  const recoveryType = searchParams.get("type");
+  const flowType = searchParams.get("type");
   if (code && pathname === "/") {
-    const target = new URL("/auth/reset-password", request.url);
+    // invite/email_change 系は新規パスワード設定画面へ、それ以外（recovery含む）はリセット画面へ
+    const targetPath =
+      flowType === "invite" || flowType === "email_change" || flowType === "signup"
+        ? "/auth/set-password"
+        : "/auth/reset-password";
+    const target = new URL(targetPath, request.url);
     target.searchParams.set("code", code);
-    if (recoveryType) target.searchParams.set("type", recoveryType);
+    if (flowType) target.searchParams.set("type", flowType);
     return NextResponse.redirect(target);
   }
 
