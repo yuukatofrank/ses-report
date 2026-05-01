@@ -1,8 +1,36 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
-import { requireAuth } from "@/lib/auth";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { requireAuth, type AuthedUser } from "@/lib/auth";
+
+// 対象 expense_report の所有者を確認し、本人 or admin のみ操作可能とするヘルパー
+async function checkOwnership(
+  user: AuthedUser,
+  reportId: string
+): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
+  if (user.isAdmin) return { ok: true };
+
+  const supabase = createSupabaseAdminClient();
+  const { data: report } = await supabase
+    .from("expense_reports")
+    .select("member:members(user_id)")
+    .eq("id", reportId)
+    .single();
+
+  const ownerUserId = (report?.member as unknown as { user_id: string } | null)?.user_id;
+  if (!ownerUserId) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "経費が見つかりません" }, { status: 404 }),
+    };
+  }
+  if (ownerUserId !== user.id) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "他のメンバーの経費は操作できません" }, { status: 403 }),
+    };
+  }
+  return { ok: true };
+}
 
 export async function GET(
   _request: Request,
@@ -10,8 +38,12 @@ export async function GET(
 ) {
   const authResult = await requireAuth();
   if ("error" in authResult) return authResult.error;
+  const { user } = authResult;
 
   const { id } = await params;
+  const ownership = await checkOwnership(user, id);
+  if (!ownership.ok) return ownership.response;
+
   const supabase = createSupabaseAdminClient();
 
   const { data: report, error } = await supabase
@@ -43,37 +75,23 @@ export async function PUT(
 ) {
   const authResult = await requireAuth();
   if ("error" in authResult) return authResult.error;
+  const { user } = authResult;
 
   const { id } = await params;
   const body = await request.json();
-  const supabase = createSupabaseAdminClient();
 
-  // Admin check for status changes to 'approved' or 'returned'
+  // 承認・差し戻しは admin 専用
   if (body.status === "approved" || body.status === "returned") {
-    const cookieStore = await cookies();
-    const supabaseAuth = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-        },
-      }
-    );
-
-    const {
-      data: { user },
-    } = await supabaseAuth.auth.getUser();
-
-    if (!user || user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
-      return NextResponse.json(
-        { error: "管理者権限が必要です" },
-        { status: 403 }
-      );
+    if (!user.isAdmin) {
+      return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 });
     }
+  } else {
+    // それ以外の編集は本人 or admin のみ
+    const ownership = await checkOwnership(user, id);
+    if (!ownership.ok) return ownership.response;
   }
+
+  const supabase = createSupabaseAdminClient();
 
   // Update the expense_report
   const updateData: Record<string, unknown> = {
@@ -163,8 +181,12 @@ export async function DELETE(
 ) {
   const authResult = await requireAuth();
   if ("error" in authResult) return authResult.error;
+  const { user } = authResult;
 
   const { id } = await params;
+  const ownership = await checkOwnership(user, id);
+  if (!ownership.ok) return ownership.response;
+
   const supabase = createSupabaseAdminClient();
 
   // Cascade delete: items are deleted via FK cascade in DB,

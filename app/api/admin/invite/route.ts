@@ -37,6 +37,12 @@ export async function POST(request: Request) {
 
   // token_hashを使って自前のURLを構築（action_linkはPKCE問題があるため使わない）
   const tokenHash = linkData.properties?.hashed_token;
+  if (!tokenHash) {
+    return NextResponse.json(
+      { error: "招待リンクの生成に失敗しました（token_hash 取得不可）" },
+      { status: 500 }
+    );
+  }
   const inviteUrl = `${appUrl}/auth/set-password?token_hash=${encodeURIComponent(tokenHash)}&type=invite`;
 
   // 有効期限（24時間後）をJST で計算

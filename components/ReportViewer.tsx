@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Report, Comment } from "@/types";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useUser } from "@/app/UserProvider";
 
 interface ReportViewerProps {
@@ -109,8 +108,6 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
   const [commentLoading, setCommentLoading] = useState(false);
   const { userId: currentUserId, userEmail: currentUserEmail } = useUser();
 
-  const supabaseClient = createSupabaseBrowserClient();
-
   useEffect(() => {
     setAnalysis(report.ai_analysis || "");
     setInsight(report.ai_insight ?? null);
@@ -121,21 +118,10 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
   const runAnalysis = async () => {
     setAnalysisLoading(true);
     try {
-      const { data: prevReports } = await supabaseClient
-        .from("reports")
-        .select("month,issues,learnings,achievements,next_month")
-        .eq("member_id", report.member_id)
-        .lt("month", report.month)
-        .order("month", { ascending: false })
-        .limit(6);
-
       const res = await fetch("/api/ai-analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentReport: report,
-          previousReports: prevReports || [],
-        }),
+        body: JSON.stringify({ currentReport: report }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -152,25 +138,25 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
   };
 
   const fetchComments = async () => {
-    const { data } = await supabaseClient
-      .from("comments")
-      .select("*")
-      .eq("report_id", report.id)
-      .order("created_at", { ascending: true });
-    if (data) setComments(data);
+    const res = await fetch(`/api/comments?report_id=${report.id}`);
+    if (res.ok) setComments(await res.json());
   };
 
   const handleAddComment = async () => {
     if (!newComment.trim() || !currentUserId || !currentUserEmail) return;
     setCommentLoading(true);
     try {
-      const { error } = await supabaseClient.from("comments").insert({
-        report_id: report.id,
-        user_id: currentUserId,
-        user_email: currentUserEmail,
-        content: newComment.trim(),
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          report_id: report.id,
+          user_id: currentUserId,
+          user_email: currentUserEmail,
+          content: newComment.trim(),
+        }),
       });
-      if (!error) {
+      if (res.ok) {
         setNewComment("");
         await fetchComments();
         // 報告書作成者へメール通知
@@ -191,8 +177,13 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
 
   const handleDeleteComment = async (id: string) => {
     if (!confirm("このコメントを削除しますか？")) return;
-    await supabaseClient.from("comments").delete().eq("id", id);
-    await fetchComments();
+    const res = await fetch(`/api/comments/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      await fetchComments();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert(err.error || "削除に失敗しました");
+    }
   };
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [emails, setEmails] = useState<string[]>(

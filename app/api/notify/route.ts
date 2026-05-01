@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { Resend } from "resend";
+import { escapeHtml } from "@/lib/html-escape";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -77,16 +78,16 @@ export async function POST(request: Request) {
   <div class="wrapper">
     <div class="header">
       <h1>frankSQUARE月次報告</h1>
-      <h2>${memberName}さんから月報が届きました</h2>
-      <span class="badge">📋 ${monthLabel} 報告</span>
+      <h2>${escapeHtml(memberName)}さんから月報が届きました</h2>
+      <span class="badge">📋 ${escapeHtml(monthLabel)} 報告</span>
     </div>
     ${reportUrlButton}
     <div class="body">
       <div class="meta">
-        <span>👤 氏名：${memberName}</span>
-        ${role ? `<span>💼 役割：${role}</span>` : ""}
-        ${project ? `<span>🗂 プロジェクト：${project}</span>` : ""}
-        <span>📅 報告月：${monthLabel}</span>
+        <span>👤 氏名：${escapeHtml(memberName)}</span>
+        ${role ? `<span>💼 役割：${escapeHtml(role)}</span>` : ""}
+        ${project ? `<span>🗂 プロジェクト：${escapeHtml(project)}</span>` : ""}
+        <span>📅 報告月：${escapeHtml(monthLabel)}</span>
       </div>
 
 
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
           ? `
       <div class="section">
         <div class="section-label">今月の業務・タスク</div>
-        <div class="section-body">${works}</div>
+        <div class="section-body">${escapeHtml(works)}</div>
       </div>
       <hr class="divider">`
           : ""
@@ -106,7 +107,7 @@ export async function POST(request: Request) {
           ? `
       <div class="section">
         <div class="section-label">成果・達成事項</div>
-        <div class="section-body">${achievements}</div>
+        <div class="section-body">${escapeHtml(achievements)}</div>
       </div>
       <hr class="divider">`
           : ""
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
           ? `
       <div class="section">
         <div class="section-label">発生した問題・トラブル</div>
-        <div class="section-body">${issues}</div>
+        <div class="section-body">${escapeHtml(issues)}</div>
       </div>
       <hr class="divider">`
           : ""
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
           ? `
       <div class="section">
         <div class="section-label">学んだこと・気づき・反省点</div>
-        <div class="section-body">${learnings}</div>
+        <div class="section-body">${escapeHtml(learnings)}</div>
       </div>
       <hr class="divider">`
           : ""
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
           ? `
       <div class="section">
         <div class="section-label">来月の課題・目標</div>
-        <div class="section-body">${nextMonth}</div>
+        <div class="section-body">${escapeHtml(nextMonth)}</div>
       </div>`
           : ""
       }
@@ -156,7 +157,7 @@ export async function POST(request: Request) {
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
       to: toList,
-      subject: `【月次報告】${memberName}さん ${monthLabel}分`,
+      subject: `【月次報告】${escapeHtml(memberName)}さん ${escapeHtml(monthLabel)}分`,
       html,
     });
 

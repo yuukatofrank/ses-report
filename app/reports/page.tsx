@@ -135,6 +135,7 @@ function HomeContent() {
         setViewingMember(updated);
         setShowProfileModal(false);
         await fetchReports(updated.id);
+        router.refresh();
       } else {
         const err = await res.json().catch(() => ({ error: `保存に失敗しました (${res.status})` }));
         setProfileError(err.error || `保存に失敗しました (${res.status})`);

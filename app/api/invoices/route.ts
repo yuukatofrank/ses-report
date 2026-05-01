@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/auth";
 import { ContractItem, InvoiceItem } from "@/types";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { getNextInvoiceNumber } from "@/lib/invoice-number";
 
 function expandName(template: string, targetMonth: string, workerName: string, projectName: string): string {
   const month = parseInt(targetMonth.split("-")[1]);
@@ -18,26 +18,6 @@ function calcDueDate(issueDate: string, offset: number, day: number): string {
   const baseMonth = d.getMonth() - 1;
   if (day === 0) return new Date(d.getFullYear(), baseMonth + offset + 1, 0).toISOString().split("T")[0];
   return new Date(d.getFullYear(), baseMonth + offset, day).toISOString().split("T")[0];
-}
-
-async function getNextInvoiceNumber(supabase: SupabaseClient, issueDate: string): Promise<string> {
-  const ym = issueDate.substring(0, 7).replace("-", "");
-  const prefix = `No.${ym}-`;
-  // Get the max existing number for this month
-  const { data } = await supabase
-    .from("invoices")
-    .select("invoice_number")
-    .like("invoice_number", `${prefix}%`)
-    .order("invoice_number", { ascending: false })
-    .limit(1);
-
-  let maxNum = 0;
-  if (data && data.length > 0) {
-    const last = data[0].invoice_number as string;
-    const numPart = last.replace(prefix, "");
-    maxNum = parseInt(numPart) || 0;
-  }
-  return `${prefix}${String(maxNum + 1).padStart(3, "0")}`;
 }
 
 export async function GET() {

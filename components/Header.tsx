@@ -83,7 +83,7 @@ export default function Header({ onEditProfile, onToggleSidebar }: HeaderProps) 
             </Link>
             <Link
               href="/admin"
-              className="hidden md:inline-flex text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
+              className="text-white/70 hover:text-white px-2.5 md:px-3 py-1.5 rounded-lg text-xs md:text-sm
                          font-medium hover:bg-white/10 transition-colors border border-white/20 whitespace-nowrap"
             >
               管理

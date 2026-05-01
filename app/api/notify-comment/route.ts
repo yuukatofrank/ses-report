@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
+import { escapeHtml } from "@/lib/html-escape";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -78,11 +79,11 @@ export async function POST(request: Request) {
     </div>
     <div class="body">
       <p style="font-size:14px; color:#555;">
-        <strong>${report.member_name}</strong>さんの<strong>${monthLabel}</strong>の月報にコメントが追加されました。
+        <strong>${escapeHtml(report.member_name)}</strong>さんの<strong>${escapeHtml(monthLabel)}</strong>の月報にコメントが追加されました。
       </p>
       <div class="comment-box">
-        <div class="meta">from: ${commenterEmail || commenterName || "不明"}</div>
-        <div class="content">${commentContent}</div>
+        <div class="meta">from: ${escapeHtml(commenterEmail || commenterName || "不明")}</div>
+        <div class="content">${escapeHtml(commentContent)}</div>
       </div>
     </div>
     <div class="footer">
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
       to: member.email,
-      subject: `【月次報告】${monthLabel}の月報にコメントが届きました`,
+      subject: `【月次報告】${escapeHtml(monthLabel)}の月報にコメントが届きました`,
       html,
     });
 

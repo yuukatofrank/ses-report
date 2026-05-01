@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
+import { escapeHtml } from "@/lib/html-escape";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
   const reasonBlock = reason
     ? `<div style="background:#fff8f0; border-left:4px solid #f97316; border-radius:0 8px 8px 0; padding:16px 18px; margin:24px 0;">
         <p style="font-size:11px; font-weight:bold; color:#f97316; margin:0 0 8px; text-transform:uppercase; letter-spacing:0.08em;">差し戻し理由</p>
-        <p style="font-size:14px; color:#444; line-height:1.7; white-space:pre-wrap; margin:0;">${reason}</p>
+        <p style="font-size:14px; color:#444; line-height:1.7; white-space:pre-wrap; margin:0;">${escapeHtml(reason)}</p>
       </div>`
     : `<p style="font-size:14px; color:#666; margin:16px 0;">担当者より内容の確認・修正をお願いします。</p>`;
 
@@ -90,14 +91,14 @@ export async function POST(request: Request) {
     ${reportUrlButton}
     <div class="body">
       <div class="meta">
-        <span>👤 氏名：${memberName}</span>
-        ${project ? `<span>🗂 プロジェクト：${project}</span>` : ""}
-        <span>📅 報告月：${monthLabel}</span>
+        <span>👤 氏名：${escapeHtml(memberName)}</span>
+        ${project ? `<span>🗂 プロジェクト：${escapeHtml(project)}</span>` : ""}
+        <span>📅 報告月：${escapeHtml(monthLabel)}</span>
       </div>
 
       <p style="font-size:14px; color:#333; line-height:1.7; margin:0 0 8px;">
-        ${memberName} さん、お疲れさまです。<br>
-        ${monthLabel}分の月報について、担当者より差し戻しが行われました。
+        ${escapeHtml(memberName)} さん、お疲れさまです。<br>
+        ${escapeHtml(monthLabel)}分の月報について、担当者より差し戻しが行われました。
       </p>
 
       ${reasonBlock}
@@ -118,7 +119,7 @@ export async function POST(request: Request) {
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
       to: [memberEmail],
-      subject: `【月次報告】${monthLabel}分の月報が差し戻されました`,
+      subject: `【月次報告】${escapeHtml(monthLabel)}分の月報が差し戻されました`,
       html,
     });
 

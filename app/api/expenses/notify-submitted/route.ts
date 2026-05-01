@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { Resend } from "resend";
+import { escapeHtml } from "@/lib/html-escape";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -52,13 +53,13 @@ export async function POST(request: Request) {
   <div class="wrapper">
     <div class="header">
       <h1>frankSQUARE経費申請</h1>
-      <h2>${memberName}さんから${noExpense ? "「申請なし」報告" : "経費申請"}が届きました</h2>
-      <span class="badge">${noExpense ? "📭" : "📋"} ${monthLabel}分</span>
+      <h2>${escapeHtml(memberName)}さんから${noExpense ? "「申請なし」報告" : "経費申請"}が届きました</h2>
+      <span class="badge">${noExpense ? "📭" : "📋"} ${escapeHtml(monthLabel)}分</span>
     </div>
     <div class="body">
       <div class="meta">
-        <span>👤 申請者：${memberName}</span>
-        <span>📅 対象月：${monthLabel}</span>
+        <span>👤 申請者：${escapeHtml(memberName)}</span>
+        <span>📅 対象月：${escapeHtml(monthLabel)}</span>
         ${noExpense
           ? '<span>📭 該当月の経費申請はありません</span>'
           : `<span>📝 明細件数：${itemCount ?? 0}件</span>
@@ -79,8 +80,8 @@ export async function POST(request: Request) {
       from: process.env.RESEND_FROM_EMAIL || "noreply@franksquare.co.jp",
       to: adminEmail,
       subject: noExpense
-        ? `【経費申請なし】${memberName}さん ${monthLabel}分`
-        : `【経費申請】${memberName}さん ${monthLabel}分`,
+        ? `【経費申請なし】${escapeHtml(memberName)}さん ${escapeHtml(monthLabel)}分`
+        : `【経費申請】${escapeHtml(memberName)}さん ${escapeHtml(monthLabel)}分`,
       html,
     });
 

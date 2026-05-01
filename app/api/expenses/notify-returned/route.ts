@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
+import { escapeHtml } from "@/lib/html-escape";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -73,13 +74,13 @@ export async function POST(request: Request) {
     </div>
     <div class="body">
       <div class="meta">
-        <span>👤 申請者：${memberName}</span>
-        <span>📅 対象月：${monthLabel}</span>
+        <span>👤 申請者：${escapeHtml(memberName)}</span>
+        <span>📅 対象月：${escapeHtml(monthLabel)}</span>
       </div>
       ${reason ? `
       <div class="reason-box">
         <div class="reason-label">差し戻し理由</div>
-        <div class="reason-text">${reason}</div>
+        <div class="reason-text">${escapeHtml(reason)}</div>
       </div>
       ` : ""}
       <p style="font-size: 14px; color: #555; line-height: 1.7;">内容を修正の上、再度申請してください。</p>
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "noreply@franksquare.co.jp",
       to: memberEmail,
-      subject: `【経費申請】${monthLabel}分が差し戻されました`,
+      subject: `【経費申請】${escapeHtml(monthLabel)}分が差し戻されました`,
       html,
     });
 

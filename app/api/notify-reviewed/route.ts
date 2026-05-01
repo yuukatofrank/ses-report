@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { Resend } from "resend";
+import { escapeHtml } from "@/lib/html-escape";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -52,20 +53,20 @@ export async function POST(request: Request) {
     </div>
     <div class="body">
       <p class="message">
-        ${memberName} さん、<br><br>
-        ${monthLabel}の月次報告書を上司が確認しました。<br>
+        ${escapeHtml(memberName)} さん、<br><br>
+        ${escapeHtml(monthLabel)}の月次報告書を上司が確認しました。<br>
         引き続きよろしくお願いいたします。
       </p>
       <div class="meta">
-        <span>👤 氏名：${memberName}</span>
-        ${project ? `<span>🗂 プロジェクト：${project}</span>` : ""}
-        <span>📅 報告月：${monthLabel}</span>
+        <span>👤 氏名：${escapeHtml(memberName)}</span>
+        ${project ? `<span>🗂 プロジェクト：${escapeHtml(project)}</span>` : ""}
+        <span>📅 報告月：${escapeHtml(monthLabel)}</span>
         <span>✅ ステータス：確認済み</span>
       </div>
       ${comment ? `
       <div style="background: #f0faf7; border-left: 3px solid #0f6e56; border-radius: 6px; padding: 14px 18px; margin-bottom: 24px;">
         <p style="font-size: 12px; font-weight: bold; color: #0f6e56; margin: 0 0 6px;">確認者コメント</p>
-        <p style="font-size: 14px; color: #333; margin: 0; white-space: pre-wrap;">${comment}</p>
+        <p style="font-size: 14px; color: #333; margin: 0; white-space: pre-wrap;">${escapeHtml(comment)}</p>
       </div>` : ""}
       ${reportUrl ? `
       <div class="btn-wrap">
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
     const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
       to: [memberEmail],
-      subject: `【月次報告】${monthLabel}分の報告書が確認されました`,
+      subject: `【月次報告】${escapeHtml(monthLabel)}分の報告書が確認されました`,
       html,
     });
 

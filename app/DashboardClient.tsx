@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { Member } from "@/types";
 
 type DashboardStats = {
@@ -90,14 +89,15 @@ export default function DashboardClient({
   isAdmin: boolean;
 }) {
   const router = useRouter();
-  const supabase = createSupabaseBrowserClient();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileName, setProfileName] = useState(member.name);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const handleSaveProfile = async () => {
     if (!profileName.trim()) return;
     setProfileSaving(true);
+    setProfileError(null);
     try {
       const res = await fetch("/api/profile", {
         method: "PUT",
@@ -112,7 +112,12 @@ export default function DashboardClient({
       if (res.ok) {
         setShowProfileModal(false);
         router.refresh();
+      } else {
+        const err = await res.json().catch(() => ({ error: `保存に失敗しました (${res.status})` }));
+        setProfileError(err.error || `保存に失敗しました (${res.status})`);
       }
+    } catch (e) {
+      setProfileError(`通信エラー: ${e instanceof Error ? e.message : "unknown"}`);
     } finally {
       setProfileSaving(false);
     }
@@ -242,6 +247,11 @@ export default function DashboardClient({
               onChange={(e) => setProfileName(e.target.value)}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
+            {profileError && (
+              <div className="mt-3 text-sm rounded-lg px-3 py-2 bg-red-50 text-red-700 border border-red-200">
+                {profileError}
+              </div>
+            )}
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setShowProfileModal(false)}

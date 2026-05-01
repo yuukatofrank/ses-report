@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ExpenseReport, ExpenseItem, Member } from "@/types";
 import ExpenseList from "@/components/expense/ExpenseList";
 import ExpenseForm from "@/components/expense/ExpenseForm";
@@ -18,6 +18,7 @@ function fmtMonth(ym: string): string {
 
 function ExpensesContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAdmin: isSuperAdmin, member } = useUser();
 
   const [loading, setLoading] = useState(true);
@@ -68,6 +69,23 @@ function ExpensesContent() {
       } else {
         setFilterMemberId(member.id);
         await fetchReports(member.id, selectedMonth);
+      }
+
+      // URLパラメータから経費を自動表示（差し戻しメール等のリンク経由）
+      const expenseId = searchParams.get("expense_id");
+      if (expenseId) {
+        const res = await fetch(`/api/expenses/${expenseId}`);
+        if (res.ok) {
+          const expense = await res.json();
+          setSelectedReport(expense);
+          setViewMode("view");
+          // 該当経費の月にフィルターを切り替える
+          if (expense.month && expense.month !== selectedMonth) {
+            setSelectedMonth(expense.month);
+            const mid = isSuperAdmin ? "all" : member.id;
+            await fetchReports(mid, expense.month);
+          }
+        }
       }
 
       setLoading(false);
@@ -139,7 +157,7 @@ function ExpensesContent() {
           itemCount: 0,
           totalAmount: 0,
           noExpense: true,
-          expenseUrl: `${window.location.origin}/expenses`,
+          expenseUrl: `${window.location.origin}/expenses?expense_id=${saved.id}`,
         }),
       }).catch(console.error);
     } else {
@@ -185,7 +203,7 @@ function ExpensesContent() {
               month: data.month,
               itemCount: data.items.length,
               totalAmount,
-              expenseUrl: `${window.location.origin}/expenses`,
+              expenseUrl: `${window.location.origin}/expenses?expense_id=${saved.id}`,
             }),
           }).catch(console.error);
         }
@@ -221,7 +239,7 @@ function ExpensesContent() {
               month: data.month,
               itemCount: data.items.length,
               totalAmount,
-              expenseUrl: `${window.location.origin}/expenses`,
+              expenseUrl: `${window.location.origin}/expenses?expense_id=${selectedReport.id}`,
             }),
           }).catch(console.error);
         }
@@ -325,7 +343,7 @@ function ExpensesContent() {
           memberName: selectedReport.member_name,
           month: selectedReport.month,
           reason: comment || null,
-          expenseUrl: `${window.location.origin}/expenses`,
+          expenseUrl: `${window.location.origin}/expenses?expense_id=${selectedReport.id}`,
         }),
       }).catch(console.error);
     }

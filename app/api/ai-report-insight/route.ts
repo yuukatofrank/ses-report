@@ -1,27 +1,13 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseAdminClient } from "@/lib/supabase";
-import { requireAuth } from "@/lib/auth";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { requireAdmin } from "@/lib/auth";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: Request) {
-  const authResult = await requireAuth();
+  const authResult = await requireAdmin();
   if ("error" in authResult) return authResult.error;
-
-  // 最高権限ユーザーのみ許可
-  const cookieStore = await cookies();
-  const authClient = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} } }
-  );
-  const { data: { user } } = await authClient.auth.getUser();
-  if (!user || user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
-    return NextResponse.json({ error: "権限がありません" }, { status: 403 });
-  }
 
   const body = await request.json();
   const { report } = body;
@@ -51,7 +37,7 @@ export async function POST(request: Request) {
 }`;
 
   const message = await client.messages.create({
-    model: "claude-opus-4-5",
+    model: "claude-opus-4-6",
     max_tokens: 1024,
     messages: [{ role: "user", content: prompt }],
   });

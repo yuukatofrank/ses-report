@@ -7,10 +7,9 @@ export async function GET() {
   if ("error" in authResult) return authResult.error;
 
   const supabase = createSupabaseAdminClient();
-  const adminClient = supabase;
 
   // auth.users を全件取得
-  const { data: authData, error: authError } = await adminClient.auth.admin.listUsers();
+  const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
   if (authError) {
     return NextResponse.json({ error: authError.message }, { status: 500 });
   }
@@ -23,10 +22,11 @@ export async function GET() {
     return NextResponse.json({ error: membersError.message }, { status: 500 });
   }
 
-  const membersByEmail = new Map(members.map((m) => [m.email, m]));
+  // user_id ベースの lookup（auth.users.id でマッチ、メール変更耐性あり）
+  const membersByUserId = new Map(members.map((m) => [m.user_id, m]));
 
   const users = authData.users.map((u) => {
-    const member = membersByEmail.get(u.email ?? "");
+    const member = membersByUserId.get(u.id);
     return {
       auth_id: u.id,
       email: u.email ?? "",
