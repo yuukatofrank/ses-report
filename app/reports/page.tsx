@@ -34,6 +34,7 @@ function HomeContent() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileName, setProfileName] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const fetchReports = useCallback(async (memberId: string) => {
     const res = await fetch(`/api/reports?member_id=${memberId}`);
@@ -116,6 +117,7 @@ function HomeContent() {
   const handleSaveProfile = async () => {
     if (!profileName.trim() || !userId) return;
     setProfileSaving(true);
+    setProfileError(null);
     try {
       const method = member ? "PUT" : "POST";
       const res = await fetch("/api/profile", {
@@ -133,7 +135,12 @@ function HomeContent() {
         setViewingMember(updated);
         setShowProfileModal(false);
         await fetchReports(updated.id);
+      } else {
+        const err = await res.json().catch(() => ({ error: `保存に失敗しました (${res.status})` }));
+        setProfileError(err.error || `保存に失敗しました (${res.status})`);
       }
+    } catch (e) {
+      setProfileError(`通信エラー: ${e instanceof Error ? e.message : "unknown"}`);
     } finally {
       setProfileSaving(false);
     }
@@ -409,6 +416,11 @@ function HomeContent() {
                 />
               </div>
             </div>
+            {profileError && (
+              <div className="mt-3 text-sm rounded-lg px-3 py-2 bg-red-50 text-red-700 border border-red-200">
+                {profileError}
+              </div>
+            )}
             <div className="flex gap-2 mt-5">
               {member && (
                 <button
