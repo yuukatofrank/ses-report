@@ -16,9 +16,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "報告書データがありません" }, { status: 400 });
   }
 
-  const prompt = `以下のSESエンジニアの月次報告書を分析してください。
-以下の3つの観点で、具体的かつ建設的なフィードバックを日本語で出力してください。
-各セクションは必ず記載し、箇条書きで3〜5点ずつ挙げてください。
+  const prompt = `以下のSESエンジニアの月次報告書を分析し、submit_report_insight ツールで結果を提出してください。
+各項目は具体的かつ建設的な内容で、3〜5点ずつ日本語で記載してください。
 
 ---
 【報告月】${report.month}
@@ -27,35 +26,62 @@ export async function POST(request: Request) {
 【発生した課題・トラブル】${report.issues || "（未記入）"}
 【学んだこと・気づき】${report.learnings || "（未記入）"}
 【来月の目標】${report.next_month || "（未記入）"}
----
-
-以下のJSON形式で出力してください（マークダウンや説明文は不要、JSONのみ）:
-{
-  "issues": ["課題・問題点1", "課題・問題点2", ...],
-  "improvements": ["改善提案1", "改善提案2", ...],
-  "growth": ["成長・プラスのポイント1", "成長・プラスのポイント2", ...]
-}`;
+---`;
 
   const message = await client.messages.create({
     model: "claude-opus-4-6",
-    max_tokens: 1024,
+    max_tokens: 4096,
+    tools: [
+      {
+        name: "submit_report_insight",
+        description: "月次報告書の分析結果を提出する",
+        input_schema: {
+          type: "object",
+          properties: {
+            issues: {
+              type: "array",
+              items: { type: "string" },
+              description: "課題・問題点（3〜5点）",
+            },
+            improvements: {
+              type: "array",
+              items: { type: "string" },
+              description: "改善提案（3〜5点）",
+            },
+            growth: {
+              type: "array",
+              items: { type: "string" },
+              description: "成長・プラスのポイント（3〜5点）",
+            },
+          },
+          required: ["issues", "improvements", "growth"],
+        },
+      },
+    ],
+    tool_choice: { type: "tool", name: "submit_report_insight" },
     messages: [{ role: "user", content: prompt }],
   });
 
-  const textBlock = message.content.find((b) => b.type === "text");
-  const text = textBlock && textBlock.type === "text" ? textBlock.text : "{}";
-
-  try {
-    // コードブロック（```json ... ```）が含まれる場合は除去
-    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const result = JSON.parse(cleaned);
-
-    // DBに保存
-    const supabase = createSupabaseAdminClient();
-    await supabase.from("reports").update({ ai_insight: result }).eq("id", report.id);
-
-    return NextResponse.json(result);
-  } catch (e) {
-    return NextResponse.json({ error: `分析結果の解析に失敗しました: ${text.slice(0, 100)}` }, { status: 500 });
+  const toolUseBlock = message.content.find((b) => b.type === "tool_use");
+  if (!toolUseBlock || toolUseBlock.type !== "tool_use") {
+    console.error("[ai-report-insight] tool_use block not found", {
+      stop_reason: message.stop_reason,
+      content_types: message.content.map((b) => b.type),
+    });
+    return NextResponse.json(
+      { error: `分析結果を取得できませんでした (stop_reason: ${message.stop_reason})` },
+      { status: 500 }
+    );
   }
+
+  const result = toolUseBlock.input as {
+    issues: string[];
+    improvements: string[];
+    growth: string[];
+  };
+
+  const supabase = createSupabaseAdminClient();
+  await supabase.from("reports").update({ ai_insight: result }).eq("id", report.id);
+
+  return NextResponse.json(result);
 }
