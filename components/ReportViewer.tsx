@@ -616,7 +616,26 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
                   if (!onReview) return;
                   setReviewing(true);
                   try {
-                    await onReview(reviewComment.trim() || undefined);
+                    const trimmed = reviewComment.trim();
+                    await onReview(trimmed || undefined);
+
+                    // 確認済みコメントをcomments欄にも保存（入力があれば）
+                    if (trimmed && currentUserId && currentUserEmail) {
+                      const res = await fetch("/api/comments", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          report_id: report.id,
+                          user_id: currentUserId,
+                          user_email: currentUserEmail,
+                          content: trimmed,
+                        }),
+                      });
+                      if (res.ok) {
+                        await fetchComments();
+                      }
+                    }
+
                     setShowReviewModal(false);
                   } finally {
                     setReviewing(false);
