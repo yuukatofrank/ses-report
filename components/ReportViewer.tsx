@@ -567,7 +567,26 @@ export default function ReportViewer({ report, onEdit, onSubmit, onReview, onRet
                   if (!onReturn) return;
                   setReturning(true);
                   try {
-                    await onReturn(returnReason.trim() || undefined);
+                    const trimmed = returnReason.trim();
+                    await onReturn(trimmed || undefined);
+
+                    // 差し戻し理由をcomments欄にも保存（入力があれば）
+                    if (trimmed && currentUserId && currentUserEmail) {
+                      const res = await fetch("/api/comments", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          report_id: report.id,
+                          user_id: currentUserId,
+                          user_email: currentUserEmail,
+                          content: `【差し戻し理由】\n${trimmed}`,
+                        }),
+                      });
+                      if (res.ok) {
+                        await fetchComments();
+                      }
+                    }
+
                     setShowReturnModal(false);
                   } finally {
                     setReturning(false);
